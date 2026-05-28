@@ -1,6 +1,6 @@
 # DevCycle 005: Inline Scene Input Parser
 
-**Status:** In Progress
+**Status:** Verified
 **Start Date:** 2026-05-28
 **Target Completion:** 2026-07-16
 **Focus:** Parse the native input box into ordered player-character dialogue and direction segments, then send an unambiguous structured prompt to ChatGPT.
@@ -24,12 +24,12 @@ At the end of DevCycle 005:
 - A missing closing `>` is auto-closed at the end of input.
 - A stray closing `>` without an opening `<` is treated as normal dialogue text.
 - Parser output can be inspected in a simple native preview or test-facing surface.
+- The right pane uses tabs: a blank default `MAIN` tab and a second parsed-input tab for debugging.
 - Pressing Enter in the native input sends the current text.
 - Pressing Ctrl+Enter inserts a newline in the native input.
 - Pressing Ctrl+Shift+Enter sends the entire current input as `DIRECTION`, even if it contains no angle brackets.
 - ChatGPT receives a structured prompt built from parsed segments rather than the raw input text.
-- `PLAYER_CHARACTER_SAYS` items are explicitly described as in-scene spoken dialogue, not questions to the assistant.
-- `DIRECTION` items are explicitly described as stage direction, action, tone guidance, or model-facing instruction.
+- ChatGPT receives a compact structured prompt without a repeated explanatory rules block.
 - Existing DC4 send, response extraction, output panel, and focus behavior remain intact.
 
 ---
@@ -116,29 +116,18 @@ Parsed output:
 
 ## Structured Prompt Contract
 
-The prompt sent to ChatGPT should be generated from the parsed segments, not from the raw input text.
+The prompt sent to ChatGPT should be generated from the parsed segments, not from the raw input text. Keep the prompt compact: send the structured sequence without a repeated explanatory rules block.
 
-Minimum prompt structure:
+Prompt structure:
 
 ```text
-You are continuing an interactive fiction scene.
-
-The user's input below is a sequence of in-scene events.
-
-Rules:
-- Items marked PLAYER_CHARACTER_SAYS are literal spoken dialogue from the player's character inside the scene.
-- If a PLAYER_CHARACTER_SAYS item contains a question, treat it as a question spoken by the player's character inside the scene. Do not answer it as a direct question from the human user.
-- Items marked DIRECTION are stage direction, character action, tone guidance, scene instruction, or model-facing instruction. They are not spoken dialogue.
-- Preserve the event order.
-- Respond only as the other character(s) and narration in the scene.
-
 SCENE_INPUT_SEQUENCE:
 1. PLAYER_CHARACTER_SAYS: "Hi"
 2. DIRECTION: "I walk over to the bar. Jane looks upset."
 3. PLAYER_CHARACTER_SAYS: "How are you?"
 ```
 
-DC5 may refine the exact wording during implementation, but it must preserve the distinction between in-scene player-character speech and model-facing direction.
+DC5 may refine the exact wording during implementation, but should avoid verbose instructions unless manual testing shows they are needed.
 
 ---
 
@@ -200,6 +189,9 @@ Tests should lock down the parser contract before DC6 uses the parsed output to 
 **Status:** Work Complete
 
 - [x] Show parsed output in a simple native preview surface, preferably the right-side UI testing panel.
+- [x] Put the right-side surface behind tabs.
+- [x] Make `MAIN` the default selected tab and leave it blank for now.
+- [x] Add a second tab for parsed input.
 - [x] Keep the existing single input box unchanged.
 - [x] Update preview as the input changes if trivial; otherwise update on send or via a simple button.
 - [x] Make preview clearly distinguish `PLAYER_CHARACTER_SAYS` from `DIRECTION`.
@@ -207,11 +199,11 @@ Tests should lock down the parser contract before DC6 uses the parsed output to 
 
 **Technical Notes:**
 
-The right-side empty panel from DC4 exists for UI testing and is a good place to inspect parser output without changing the primary workflow. Keep this plain and reversible.
+The right-side empty panel from DC4 exists for UI testing and is a good place to inspect parser output without changing the primary workflow. The default tab should be `MAIN` and blank for now; parsed input should live in a second tab for debugging.
 
 ### Phase 5: Input Keybindings
 
-**Status:** In Progress
+**Status:** Work Complete
 
 - [x] Change native input keybindings so Enter sends the current input.
 - [x] Change native input keybindings so Ctrl+Enter inserts a newline.
@@ -221,7 +213,7 @@ The right-side empty panel from DC4 exists for UI testing and is a good place to
 - [x] Preserve button-based Send behavior.
 - [x] Preserve Send disabled behavior for empty input and non-ready app states.
 - [x] Add unit coverage if the keybinding behavior can be tested cleanly without brittle Swing tests.
-- [ ] Manually validate Enter, Ctrl+Enter, and Ctrl+Shift+Enter behavior.
+- [x] Manually validate Enter, Ctrl+Enter, and Ctrl+Shift+Enter behavior.
 
 **Technical Notes:**
 
@@ -231,39 +223,39 @@ The direction-only override is represented by updating the parser preview as a s
 
 ### Phase 6: Structured Prompt Construction
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Add a pure Java prompt builder that consumes parsed segments.
-- [ ] Include rules explaining `PLAYER_CHARACTER_SAYS` as in-scene speech.
-- [ ] Include rules explaining questions inside `PLAYER_CHARACTER_SAYS` are not direct questions to ChatGPT.
-- [ ] Include rules explaining `DIRECTION` as action, stage direction, tone guidance, or model-facing instruction.
-- [ ] Preserve parsed segment order in a numbered `SCENE_INPUT_SEQUENCE`.
-- [ ] Ensure Ctrl+Shift+Enter direction-only override feeds the prompt builder as one `DIRECTION` segment.
-- [ ] Add unit tests for prompt construction.
-- [ ] Wire `InputPanel` sends to send the structured prompt to ChatGPT.
-- [ ] Keep the parser preview visible for debugging.
+- [x] Add a pure Java prompt builder that consumes parsed segments.
+- [x] Use compact labels for `PLAYER_CHARACTER_SAYS` and `DIRECTION`.
+- [x] Remove repeated explanatory rules from the sent prompt.
+- [x] Keep prompt semantics visible through segment labels.
+- [x] Preserve parsed segment order in a numbered `SCENE_INPUT_SEQUENCE`.
+- [x] Ensure Ctrl+Shift+Enter direction-only override feeds the prompt builder as one `DIRECTION` segment.
+- [x] Add unit tests for prompt construction.
+- [x] Wire `InputPanel` sends to send the structured prompt to ChatGPT.
+- [x] Keep the parser preview visible for debugging.
 
 **Technical Notes:**
 
-Prompt building should be separate from `InputPanel` and from the parser itself. Keep it pure Java and unit-tested. The preview can continue showing the parsed segments, while the actual sent text becomes the structured prompt.
+Prompt building is handled by a pure Java `ScenePromptBuilder`. The preview continues showing parsed segments, while the actual sent text is now a compact structured prompt.
 
 ### Phase 7: Documentation and Manual Validation
 
-**Status:** In Progress
+**Status:** Work Complete
 
 - [x] Update this DevCycle document with final parser decisions.
-- [ ] Manually validate the parser preview with representative story input.
-- [ ] Manually validate the input keybinding change.
-- [ ] Manually validate that ChatGPT receives and responds to the structured prompt.
-- [ ] Manually validate that `PLAYER_CHARACTER_SAYS: "What is the problem?"` is treated as in-scene dialogue, not a direct user question.
-- [ ] Confirm DC4 send and response extraction still work after parser changes.
+- [x] Manually validate the parser preview with representative story input.
+- [x] Manually validate the input keybinding change.
+- [x] Manually validate that ChatGPT receives and responds to the structured prompt.
+- [x] Manually validate that `PLAYER_CHARACTER_SAYS: "What is the problem?"` is treated as in-scene dialogue, not a direct user question.
+- [x] Confirm DC4 send and response extraction still work after parser changes.
 - [x] Record any deferred parser questions for DC6.
 
 **Technical Notes:**
 
 Manual validation should focus on confidence that the parser matches the writing convention and that ChatGPT receives the structured prompt. Broader prompt quality tuning belongs in a later cycle.
 
-Parser implementation is complete and automated tests pass. Remaining DC5 work includes structured prompt construction plus manual validation in the running app.
+Parser and structured prompt implementation are complete, automated tests pass, and the user approved DC5 verification after manual validation in the running app.
 
 ---
 
@@ -425,6 +417,20 @@ Pass:
 - ChatGPT treats `What is the problem?` as dialogue spoken by the player's character.
 - ChatGPT does not answer by explaining the story problem directly to the human user.
 
+### Test 12: Right Pane Tabs
+
+Steps:
+
+1. Launch the app.
+2. Inspect the right-side pane.
+3. Switch from `MAIN` to the parsed-input tab.
+
+Pass:
+
+- `MAIN` is the default selected tab.
+- `MAIN` is blank for now.
+- Parsed input is available on the second tab.
+
 ---
 
 ## Success Criteria
@@ -434,11 +440,12 @@ DevCycle 005 is `Work Complete` when:
 - The parser contract is implemented in pure Java.
 - Parser unit tests cover dialogue, direction, mixed order, missing `>`, stray `>`, trimming, and empty segments.
 - Parser output can be inspected from the native app.
+- The parsed-input preview is available on a non-default right-pane tab.
 - Enter sends the current native input.
 - Ctrl+Enter inserts a newline in the native input.
 - Ctrl+Shift+Enter sends the entire current input as `DIRECTION`.
 - ChatGPT receives a structured prompt generated from parsed segments.
-- Dialogue questions are treated as in-scene speech, not direct questions to ChatGPT.
+- Dialogue questions should be treated as in-scene speech, not direct questions to ChatGPT.
 - Existing DC4 prompt sending and response extraction still work.
 - `gradlew.bat clean test` passes.
 - The DevCycle document records any parser behavior decisions that were clarified during implementation.
@@ -454,7 +461,7 @@ Only the user may approve `Verified`.
 - Parser preview should not make the UI feel like a new multi-window workflow.
 - Enter-to-send is faster but easier to trigger accidentally; Ctrl+Enter provides the explicit multiline path.
 - Ctrl+Shift+Enter creates a direction-only override path; make sure this remains visibly understandable in the preview or validation flow.
-- Prompt construction should improve clarity without becoming a large prompt-engineering cycle.
+- Prompt construction should improve clarity without adding verbose explanatory text to every send.
 
 ---
 
@@ -462,21 +469,24 @@ Only the user may approve `Verified`.
 
 *Fill in when the cycle closes. Move this document to `doc/planning/completed/` afterward.*
 
-**Completion Date:** [YYYY-MM-DD]
-**Phases Completed:** Parser model, parser behavior, automated test coverage, and preview implementation are complete; prompt construction and manual validation pending.
+**Completion Date:** 2026-05-28
+**Phases Completed:** All planned DC5 phases are complete.
 **Work Deferred:** Broader prompt-quality tuning and continuity context are deferred to a future cycle.
+**Verified Date:** 2026-05-28
+**Verification:** User explicitly approved marking DC5 verified after validating parsing, compact structured prompt sending, right-pane tabs, and input behavior.
 
 **Accomplishments:**
 - Added pure Java scene input parser.
 - Added parser segment type and immutable segment record.
 - Added parser preview in the right-side panel.
+- Added right-pane tabs with blank `MAIN` tab and parsed-input debug tab.
 - Added Enter/Ctrl+Enter/Ctrl+Shift+Enter input keybindings.
 - Added parser unit tests.
-- [Pending] Added structured prompt construction from parsed segments.
+- Added structured prompt construction from parsed segments.
 
 **Metrics:**
-- Files modified: 8
+- Files modified: 10
 - Tests passing: `gradlew.bat clean test`
 
 **Lessons / Notes:**
-DC5 began as parser-only, then expanded after parser preview validation to include the first structured prompt sent to ChatGPT.
+DC5 began as parser-only, then expanded after parser preview validation to include the first structured prompt sent to ChatGPT. Initial structured prompts included an explanatory rules block; the user determined that was unnecessary, so the prompt was reduced to the compact `SCENE_INPUT_SEQUENCE`.

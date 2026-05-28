@@ -30,6 +30,9 @@ public class AppFrame extends JFrame {
         statusLabel.setForeground(Color.DARK_GRAY);
         outputPanel = new OutputPanel();
         ParsePreviewPanel parsePreviewPanel = new ParsePreviewPanel();
+        JTabbedPane rightTabs = new JTabbedPane();
+        rightTabs.addTab("MAIN", new JPanel(new BorderLayout()));
+        rightTabs.addTab("Parsed Input", parsePreviewPanel);
 
         JButton devToolsBtn = new JButton("DevTools");
         devToolsBtn.setToolTipText("Open Chromium DevTools for this page");
@@ -53,7 +56,7 @@ public class AppFrame extends JFrame {
         JSplitPane browserAndRight = new JSplitPane(
                 JSplitPane.HORIZONTAL_SPLIT,
                 browserPanel.getUIComponent(),
-                parsePreviewPanel);
+                rightTabs);
         browserAndRight.setResizeWeight(0.82);
 
         JSplitPane mainSplit = new JSplitPane(

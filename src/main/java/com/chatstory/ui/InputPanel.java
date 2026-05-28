@@ -5,6 +5,7 @@ import com.chatstory.UiThread;
 import com.chatstory.bridge.ChatBridge;
 import com.chatstory.bridge.ResponseListener;
 import com.chatstory.input.SceneInputParser;
+import com.chatstory.input.ScenePromptBuilder;
 import com.chatstory.input.SceneInputSegment;
 
 import javax.swing.*;
@@ -26,6 +27,7 @@ public class InputPanel extends JPanel {
     private final JButton sendButton = new JButton("Send");
     private final Runnable beforeFocusRequest;
     private final SceneInputParser parser = new SceneInputParser();
+    private final ScenePromptBuilder promptBuilder = new ScenePromptBuilder();
     private final Consumer<List<SceneInputSegment>> previewConsumer;
 
     public InputPanel(AppState appState, ChatBridge chatBridge, ResponseListener listener) {
@@ -128,12 +130,14 @@ public class InputPanel extends JPanel {
     }
 
     private void send(ResponseListener listener, boolean directionOverride) {
-        String prompt = textArea.getText();
-        if (prompt == null || prompt.trim().isEmpty()) {
+        String input = textArea.getText();
+        if (input == null || input.trim().isEmpty()) {
             refreshInputState();
             return;
         }
-        updatePreview(directionOverride);
+        List<SceneInputSegment> segments = parseInput(directionOverride);
+        previewConsumer.accept(segments);
+        String prompt = promptBuilder.build(segments);
         chatBridge.sendPrompt(prompt, new ResponseListener() {
             @Override
             public void onPromptSubmitted(long requestId) {
@@ -165,10 +169,13 @@ public class InputPanel extends JPanel {
     }
 
     private void updatePreview(boolean directionOverride) {
+        previewConsumer.accept(parseInput(directionOverride));
+    }
+
+    private List<SceneInputSegment> parseInput(boolean directionOverride) {
         String input = textArea.getText();
-        List<SceneInputSegment> segments = directionOverride
+        return directionOverride
                 ? parser.parseAsDirection(input)
                 : parser.parse(input);
-        previewConsumer.accept(segments);
     }
 }
