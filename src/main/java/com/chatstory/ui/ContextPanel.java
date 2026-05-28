@@ -26,6 +26,7 @@ public class ContextPanel extends JPanel {
     private final JLabel statusLabel = new JLabel(" ");
     private final JLabel stagingPathLabel;
     private final JButton stageButton = new JButton("Stage Checked");
+    private final JButton selectAllButton = new JButton("Select All");
 
     private final JTextArea viewerArea = new JTextArea();
     private final JSplitPane splitPane;
@@ -64,11 +65,13 @@ public class ContextPanel extends JPanel {
         stageButton.setEnabled(false);
 
         addButton.addActionListener(e -> addFiles());
+        selectAllButton.addActionListener(e -> selectAllOrNone());
         removeButton.addActionListener(e -> removeChecked());
         stageButton.addActionListener(e -> stageChecked());
 
         JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         buttonRow.add(addButton);
+        buttonRow.add(selectAllButton);
         buttonRow.add(removeButton);
         buttonRow.add(stageButton);
 
@@ -124,7 +127,7 @@ public class ContextPanel extends JPanel {
             cb.setFont(cb.getFont().deriveFont(Font.ITALIC));
         }
         cb.setAlignmentX(Component.LEFT_ALIGNMENT);
-        cb.addItemListener(e -> updateStageButton());
+        cb.addItemListener(e -> { updateStageButton(); updateSelectAllButton(); });
 
         cb.addMouseListener(new MouseAdapter() {
             @Override public void mousePressed(MouseEvent e)  { maybeShowViewMenu(e, path); }
@@ -209,6 +212,33 @@ public class ContextPanel extends JPanel {
         if (splitPane.getDividerLocation() >= splitPane.getHeight() - splitPane.getDividerSize() - 10) {
             splitPane.setDividerLocation(0.55);
         }
+    }
+
+    private void selectAllOrNone() {
+        Component[] components = checklistPanel.getComponents();
+        boolean anyUnchecked = false;
+        for (Component c : components) {
+            if (c instanceof JCheckBox cb && !cb.isSelected()) {
+                anyUnchecked = true;
+                break;
+            }
+        }
+        for (Component c : components) {
+            if (c instanceof JCheckBox cb) cb.setSelected(anyUnchecked);
+        }
+        updateSelectAllButton();
+    }
+
+    private void updateSelectAllButton() {
+        Component[] components = checklistPanel.getComponents();
+        boolean allSelected = components.length > 0;
+        for (Component c : components) {
+            if (c instanceof JCheckBox cb && !cb.isSelected()) {
+                allSelected = false;
+                break;
+            }
+        }
+        selectAllButton.setText(allSelected ? "Unselect All" : "Select All");
     }
 
     private void removeChecked() {

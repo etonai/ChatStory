@@ -1,0 +1,44 @@
+# Some ideas for DC 11 and beyond:
+
+## Setting up prompts so that ChatGPT responds with both story information and meta information.
+
+Example:
+
+Day 1 Beat 0
+
+Relationship Values:
+Drake -> Morgan STP 5.2
+
+"Hi there"
+
+Drake pulls up a chair
+
+
+In that example, the Relationship Values are not part of the story, they are more meta information.
+The Day / Beat can kind of be thought of as both.
+
+The Canon document probably doesn't need the intermediate relationship values. The beats may or may not be useful.
+I lean towards the beats being kept - they can be edited out of the canon document later.
+
+additionally, the canon document may want to keep track of all of the characters in the scenes.
+
+That way, a system can scan a canon document's header and find out who is in the document, without searching through the entire document.
+
+## Canon Document consolidation and summarizing
+We might create a function that will send a canon document to ChatGPT, and ChatGPT can summarize it and essentially make it more compact.
+
+## Canon document highlights
+We may create a highlights section (maybe even in MAIN)
+if something important happens in a scene, highlight it and and then save it as a highlight.
+
+Highlights will be elevated in canon and in summarized canon documents.
+
+It can even be used to highlight things like just knowing how much you spent on a car.
+
+The highlights section should be editable by the user. For example, maybe the user just wants to put "Honda Accord purchased for $15,000"
+
+Or maybe the highlight will end up in the canon document.
+
+// HIGHLIGHT: Honda Accord purchased for $15,000
+it will be up to the user to figure out how to parse that later.
+
