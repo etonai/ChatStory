@@ -1,48 +1,28 @@
-# Project Template
+# ChatStory — Story Workstation
 
-This repository is a lightweight starting point for new projects.
+A native Windows desktop application for long-form collaborative storytelling with ChatGPT.
 
-It is intended to provide a small amount of durable project structure without adding placeholder files that need to be cleaned up later.
+ChatStory embeds a Chromium browser (via JCEF) alongside native UI panels for structured prompt composition, story output display, and continuity management. The goal is a dedicated storytelling environment — not a browser wrapper.
 
-## Purpose
+## Current Status
 
-This template is meant to give new projects:
+**DevCycle 001 — JCEF Browser Viability Spike**
 
-- a standard project context entry point in `AGENTS.md`
-- compatibility with workflows that use `CLAUDE.md` as a project context file
-- a lightweight planning workflow in `doc/planning/DevelopmentProcess.md`
-- a default `DevCycleTemplate.md` that projects may keep or adjust
-- a clean foundation that can be adapted without unnecessary template residue
+The application is in early development. The current build is a proof-of-concept spike that validates the core browser bridge premise: can a Java desktop application reliably host ChatGPT, preserve a login session, and exchange data with the page via DOM interaction?
 
-## Agent Context Standard
+## Running
 
-`AGENTS.md` is intended to be the standard first-read document for agents with little or no project context.
+See [BUILDING.md](BUILDING.md) for setup instructions and requirements.
 
-When starting work in a project created from this template, users should direct agents to read `AGENTS.md` first.
+Quick start (Java 21 JDK required):
 
-This is intended to be the standard across all projects created from this template.
+```bat
+gradlew.bat run
+```
 
-## Important
+On first run, ~100 MB of Chromium native binaries are downloaded automatically.
 
-When you create a real project from this template, you should replace this `README.md` with a project-specific README.
+## Planning
 
-This is the one document in the template that is expected to be fully overwritten for the new project.
-
-## Getting Started
-
-After creating a new project from this template:
-
-1. Overwrite `README.md` with the actual project description.
-2. Tell agents with no context to read `AGENTS.md` before starting work.
-3. Update `AGENTS.md` with project-specific context as needed.
-4. Review `DevCycleTemplate.md` and keep it as-is or adjust it for the new project.
-5. If your workflow uses `CLAUDE.md`, keep it aligned with `AGENTS.md` or adapt as needed for Claude Code.
-6. Continue using `doc/planning/DevelopmentProcess.md` as the basis for planning and execution.
-
-## Project Owner Responsibility
-
-The template includes a `DevCycleTemplate.md` file for new projects to use as a starting point.
-
-The project owner may keep that template as-is or adjust it to better fit the project's planning style.
-
-`doc/planning/DevelopmentProcess.md` describes how DevCycle documents are used, while `DevCycleTemplate.md` provides the default starting structure.
+See `doc/planning/` for active DevCycle documents.
+See `doc/planning/ideas/` for the MVP implementation plan (`ClaudePlan03.md`).

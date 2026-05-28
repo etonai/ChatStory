@@ -1,6 +1,6 @@
 # DevCycle 001: JCEF Browser Viability Spike
 
-**Status:** Planning
+**Status:** In Progress
 **Start Date:** 2026-05-28
 **Target Completion:** 2026-06-11
 **Focus:** Prove that JCEF can launch on this machine, render ChatGPT, support manual login, and preserve a session across restarts.
@@ -32,16 +32,24 @@ If these five criteria are met, the browser integration layer is viable and DevC
 
 ### Phase 1: JCEF Research and Minimum Launch
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Research available JCEF distributions — evaluate `dev.datlag:jcef`, the official JCEF build repository, and any other current options
-- [ ] Confirm the chosen distribution supports Windows x64 and Java 21
-- [ ] Confirm whether the artifact bundles Chromium native binaries or requires separate acquisition and placement
-- [ ] Confirm whether the chosen integration approach is compatible with a future `jpackage`-based Windows installer — if not, choose a different approach before proceeding
-- [ ] Create a minimal Gradle project (Kotlin DSL) with the JCEF dependency wired up
-- [ ] Write the minimum Java entry point to open a Swing `JFrame` containing a JCEF browser component
-- [ ] Navigate to `https://chatgpt.com` on launch and confirm it renders correctly
-- [ ] Add a way to open JCEF DevTools (a button, menu item, or keyboard shortcut) and confirm it works
+- [x] Research available JCEF distributions — evaluate `dev.datlag:jcef`, the official JCEF build repository, and any other current options
+- [x] Confirm the chosen distribution supports Windows x64 and Java 21
+- [x] Confirm whether the artifact bundles Chromium native binaries or requires separate acquisition and placement
+- [x] Confirm whether the chosen integration approach is compatible with a future `jpackage`-based Windows installer — if not, choose a different approach before proceeding
+- [x] Create a minimal Gradle project (Kotlin DSL) with the JCEF dependency wired up
+- [x] Write the minimum Java entry point to open a Swing `JFrame` containing a JCEF browser component
+- [x] Navigate to `https://chatgpt.com` on launch and confirm it renders correctly
+- [x] Add a way to open JCEF DevTools (a button, menu item, or keyboard shortcut) and confirm it works
+
+**Phase 1 findings:**
+- Distribution chosen: `me.friwi:jcefmaven:146.0.10` (Chromium 146.0.7680.179, May 2026)
+- `dev.datlag:kcef` was rejected — archived as of October 2025, maintainer explicitly deprecated it
+- Auto-download of ~100 MB Chromium natives succeeded on first run
+- JCEF initialized successfully on this machine (Windows 11, Java 21 Temurin)
+- Known harmless error at startup: `Failed opening key Software\Chromium to set usagestats; result: 5` — Chromium looking for a Google Update registry key that does not exist in embedded contexts. Safe to ignore.
+- jpackage path confirmed: replace auto-download with `me.friwi:jcef-natives-windows-amd64` bundled artifact when packaging is needed
 
 **Technical Notes:**
 
@@ -86,13 +94,17 @@ ChatGPT authentication may involve OAuth redirects, popup windows, or other flow
 
 ### Stretch Goal: CefMessageRouter Ping
 
-**Status:** Planning
-**Note:** Attempt this only after Phase 1 and Phase 2 success criteria are met. Do not let this block DevCycle 001 completion.
+**Status:** Work Complete
+**Note:** Implemented alongside Phase 1 and confirmed in the same run.
 
-- [ ] Add a `CefMessageRouter` to the browser client
-- [ ] Add a small JavaScript snippet that calls `window.cefQuery({ request: JSON.stringify({ type: "ping" }) })` on page load
-- [ ] Register a Java-side query handler that logs the received ping message
-- [ ] Confirm the round-trip works: JS sends, Java receives, result is logged
+- [x] Add a `CefMessageRouter` to the browser client
+- [x] Add a small JavaScript snippet that calls `window.cefQuery({ request: JSON.stringify({ type: "ping" }) })` on page load
+- [x] Register a Java-side query handler that logs the received ping message
+- [x] Confirm the round-trip works: JS sends, Java receives, result is logged
+
+**Ping confirmed:** Console output on first run showed `[Bridge] Received from JS: {"type":"ping"}` three times (corresponding to three page load events during ChatGPT navigation). The JS→Java message channel is operational.
+
+**API discovery note:** The correct package in jcef 146 is `org.cef.browser.CefMessageRouter` (not `org.cef.network`). DevTools is `browser.openDevTools()` (not `showDevTools`). These are documented in `BUILDING.md`.
 
 **Technical Notes:**
 
