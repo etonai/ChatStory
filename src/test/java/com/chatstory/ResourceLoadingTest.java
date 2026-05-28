@@ -37,6 +37,13 @@ class ResourceLoadingTest {
     }
 
     @Test
+    void extractResponseJsLoadsAsNonEmptyString() throws IOException {
+        String content = loadResource("/js/extract_response.js");
+        assertNotNull(content);
+        assertFalse(content.isBlank(), "extract_response.js should not be empty");
+    }
+
+    @Test
     void chatgptSelectorsJsonLoadsAsNonEmptyString() throws IOException {
         String content = loadResource("/js/chatgpt_selectors.json");
         assertNotNull(content);

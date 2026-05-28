@@ -4,6 +4,7 @@ import com.chatstory.bridge.ChatGptBridge;
 import com.chatstory.bridge.ResponseListener;
 import com.chatstory.browser.BrowserPanel;
 import com.chatstory.ui.InputPanel;
+import com.chatstory.ui.OutputPanel;
 import org.cef.browser.CefBrowser;
 
 import javax.swing.*;
@@ -14,6 +15,7 @@ import java.awt.event.WindowEvent;
 public class AppFrame extends JFrame {
 
     private final JLabel statusLabel;
+    private final OutputPanel outputPanel;
 
     public AppFrame(AppState appState, BrowserPanel browserPanel, CefBrowser browser,
                     ChatGptBridge chatBridge) {
@@ -25,6 +27,7 @@ public class AppFrame extends JFrame {
 
         statusLabel = new JLabel(" Starting...");
         statusLabel.setForeground(Color.DARK_GRAY);
+        outputPanel = new OutputPanel();
 
         JButton devToolsBtn = new JButton("DevTools");
         devToolsBtn.setToolTipText("Open Chromium DevTools for this page");
@@ -45,9 +48,25 @@ public class AppFrame extends JFrame {
         toolbar.add(leftTools, BorderLayout.WEST);
         toolbar.add(statusLabel, BorderLayout.CENTER);
 
+        JPanel placeholderPanel = new JPanel(new BorderLayout());
+        placeholderPanel.setBorder(BorderFactory.createTitledBorder("UI Test Panel"));
+
+        JSplitPane browserAndRight = new JSplitPane(
+                JSplitPane.HORIZONTAL_SPLIT,
+                browserPanel.getUIComponent(),
+                placeholderPanel);
+        browserAndRight.setResizeWeight(0.82);
+
+        JSplitPane mainSplit = new JSplitPane(
+                JSplitPane.HORIZONTAL_SPLIT,
+                outputPanel,
+                browserAndRight);
+        mainSplit.setResizeWeight(0.22);
+
         add(toolbar, BorderLayout.NORTH);
-        add(browserPanel.getUIComponent(), BorderLayout.CENTER);
-        add(new InputPanel(appState, chatBridge, statusResponseListener("Prompt submitted")),
+        add(mainSplit, BorderLayout.CENTER);
+        add(new InputPanel(appState, chatBridge, statusResponseListener("Prompt submitted"),
+                        () -> browser.setFocus(false)),
                 BorderLayout.SOUTH);
 
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -73,7 +92,8 @@ public class AppFrame extends JFrame {
             case Ready:           return "Ready";
             case InjectingPrompt: return "Injecting prompt...";
             case Sending:         return "Sending prompt...";
-            case Complete:        return "Complete";
+            case WaitingForResponse: return "Waiting for response...";
+            case Complete:        return "Response complete";
             case Error:           return "Error - check console";
             default:              return state.name();
         }
@@ -83,17 +103,21 @@ public class AppFrame extends JFrame {
         return new ResponseListener() {
             @Override
             public void onPromptSubmitted(long requestId) {
-                UiThread.run(() -> statusLabel.setText(" " + successText));
+                UiThread.run(() -> {
+                    outputPanel.clear();
+                    statusLabel.setText(" " + successText);
+                });
             }
 
             @Override
             public void onResponsePartial(long requestId, String responseText) {
-                // DC4 handles response streaming/extraction.
+                outputPanel.setResponse(responseText);
             }
 
             @Override
             public void onResponseComplete(long requestId, String responseText) {
-                // DC4 handles response completion.
+                outputPanel.setResponse(responseText);
+                UiThread.run(() -> statusLabel.setText(" Response complete"));
             }
 
             @Override

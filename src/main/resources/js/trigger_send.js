@@ -75,6 +75,7 @@
             var expectedText = options.expectedText || '';
             var timeoutMs = options.timeoutMs || 5000;
             var beforeCount = allMatches(selectors.userMsg).length;
+            var assistantBeforeCount = allMatches(selectors.assistantMsg).length;
             var button = firstEnabled(selectors.sendButton);
 
             if (!button) {
@@ -119,6 +120,7 @@
                         type: 'sendResult',
                         requestId: requestId,
                         ok: true,
+                        text: String(assistantBeforeCount),
                         message: 'Prompt submitted'
                     });
                     return;

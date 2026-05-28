@@ -112,7 +112,6 @@ public class AppState {
                     || to == State.Ready
                     || to == State.Error;
             case Sending:            return to == State.WaitingForResponse
-                    || to == State.Ready
                     || to == State.Error;
             case WaitingForResponse: return to == State.Complete || to == State.Error;
             case Complete:           return to == State.Ready;

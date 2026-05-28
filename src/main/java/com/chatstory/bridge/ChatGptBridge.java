@@ -19,6 +19,9 @@ public class ChatGptBridge implements ChatBridge {
 
     public static final int USER_MESSAGE_CONFIRM_TIMEOUT_MS = 5000;
     public static final int SEND_OPERATION_TIMEOUT_MS = 10000;
+    public static final int RESPONSE_POLL_INTERVAL_MS = 500;
+    public static final int RESPONSE_STABILITY_WINDOW_MS = 1500;
+    public static final int RESPONSE_TIMEOUT_MS = 180000;
 
     private static final Gson GSON = new Gson();
 
@@ -41,6 +44,7 @@ public class ChatGptBridge implements ChatBridge {
     private boolean injectOnly;
     private String injectScript;
     private String sendScript;
+    private String extractScript;
     private JsonObject selectors;
 
     public ChatGptBridge(DomBridge domBridge, CefBrowser browser, AppState appState) {
@@ -50,6 +54,7 @@ public class ChatGptBridge implements ChatBridge {
 
         domBridge.registerHandler("injectResult", this::handleInjectResult);
         domBridge.registerHandler("sendResult", this::handleSendResult);
+        domBridge.registerHandler("responseComplete", this::handleResponseComplete);
         domBridge.registerHandler("error", this::handleErrorResult);
     }
 
@@ -83,6 +88,9 @@ public class ChatGptBridge implements ChatBridge {
         }
 
         try {
+            if (appState.current() == AppState.State.Complete) {
+                appState.transition(AppState.State.Ready);
+            }
             appState.transition(AppState.State.InjectingPrompt);
             JsonObject options = new JsonObject();
             options.addProperty("requestId", requestId);
@@ -124,7 +132,7 @@ public class ChatGptBridge implements ChatBridge {
             appState.transition(AppState.State.Sending);
             JsonObject options = new JsonObject();
             options.addProperty("requestId", message.getRequestId());
-            options.add("selectors", selectorSubset("sendButton", "userMsg"));
+            options.add("selectors", selectorSubset("sendButton", "userMsg", "assistantMsg"));
             options.addProperty("expectedText", activePrompt);
             options.addProperty("timeoutMs", USER_MESSAGE_CONFIRM_TIMEOUT_MS);
             executeFunction("/js/trigger_send.js", "window.chatStoryTriggerSend", options);
@@ -149,11 +157,54 @@ public class ChatGptBridge implements ChatBridge {
         ResponseListener listener;
         synchronized (lock) {
             listener = activeListener;
-            clearActiveLocked();
+            cancelActiveTimeoutLocked();
         }
-        appState.transition(AppState.State.Ready);
         if (listener != null) {
             listener.onPromptSubmitted(message.getRequestId());
+        }
+        try {
+            appState.transition(AppState.State.WaitingForResponse);
+            JsonObject options = new JsonObject();
+            options.addProperty("requestId", message.getRequestId());
+            options.add("selectors", selectorSubset("assistantMsg", "stopButton", "sendButton"));
+            options.addProperty("assistantBeforeCount", parseLong(message.getText(), 0L));
+            options.addProperty("pollIntervalMs", RESPONSE_POLL_INTERVAL_MS);
+            options.addProperty("stabilityWindowMs", RESPONSE_STABILITY_WINDOW_MS);
+            options.addProperty("timeoutMs", RESPONSE_TIMEOUT_MS);
+            executeFunction("/js/extract_response.js", "window.chatStoryExtractResponse", options);
+        } catch (Exception e) {
+            failActive(message.getRequestId(), ErrorCodes.EXTRACTION_FAILED, e.getMessage());
+        }
+        callback.success("");
+    }
+
+    private void handleResponseComplete(BridgeMessage message, org.cef.callback.CefQueryCallback callback) {
+        if (!isActive(message)) {
+            callback.success("");
+            return;
+        }
+
+        ResponseListener listener;
+        synchronized (lock) {
+            listener = activeListener;
+        }
+
+        if (!message.isOk()) {
+            if (listener != null && message.getText() != null && !message.getText().isBlank()) {
+                listener.onResponsePartial(message.getRequestId(), message.getText());
+            }
+            failActive(message.getRequestId(), fallback(message.getErrorCode(), ErrorCodes.EXTRACTION_FAILED),
+                    fallback(message.getMessage(), "Response extraction failed"));
+            callback.success("");
+            return;
+        }
+
+        synchronized (lock) {
+            clearActiveLocked();
+        }
+        appState.transition(AppState.State.Complete);
+        if (listener != null) {
+            listener.onResponseComplete(message.getRequestId(), message.getText());
         }
         callback.success("");
     }
@@ -207,14 +258,18 @@ public class ChatGptBridge implements ChatBridge {
     }
 
     private void clearActiveLocked() {
-        if (activeTimeout != null) {
-            activeTimeout.cancel(false);
-        }
+        cancelActiveTimeoutLocked();
         activeRequestId = 0L;
         activeListener = null;
         activePrompt = null;
-        activeTimeout = null;
         injectOnly = false;
+    }
+
+    private void cancelActiveTimeoutLocked() {
+        if (activeTimeout != null) {
+            activeTimeout.cancel(false);
+        }
+        activeTimeout = null;
     }
 
     private boolean isInjectOnly() {
@@ -257,6 +312,10 @@ public class ChatGptBridge implements ChatBridge {
             if (sendScript == null) sendScript = loadResource(resourcePath);
             return sendScript;
         }
+        if ("/js/extract_response.js".equals(resourcePath)) {
+            if (extractScript == null) extractScript = loadResource(resourcePath);
+            return extractScript;
+        }
         return loadResource(resourcePath);
     }
 
@@ -273,5 +332,14 @@ public class ChatGptBridge implements ChatBridge {
 
     private String fallback(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private long parseLong(String value, long fallback) {
+        if (value == null || value.isBlank()) return fallback;
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
     }
 }

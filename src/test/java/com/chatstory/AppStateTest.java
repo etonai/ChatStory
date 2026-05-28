@@ -129,15 +129,6 @@ class AppStateTest {
     }
 
     @Test
-    void sendingToReadyForDc3PromptSubmission() {
-        toReady();
-        state.transition(AppState.State.InjectingPrompt);
-        state.transition(AppState.State.Sending);
-        state.transition(AppState.State.Ready);
-        assertEquals(AppState.State.Ready, state.current());
-    }
-
-    @Test
     void sendingToError() {
         toReady();
         state.transition(AppState.State.InjectingPrompt);
@@ -217,6 +208,10 @@ class AppStateTest {
         toReady();
         state.transition(AppState.State.InjectingPrompt);
         assertFalse(state.isSendEnabled()); // InjectingPrompt
+
+        state.transition(AppState.State.Sending);
+        state.transition(AppState.State.WaitingForResponse);
+        assertFalse(state.isSendEnabled()); // WaitingForResponse
     }
 
     // ---- Listener -----------------------------------------------------------

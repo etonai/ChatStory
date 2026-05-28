@@ -11,6 +11,8 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class InputPanel extends JPanel {
 
@@ -18,11 +20,18 @@ public class InputPanel extends JPanel {
     private final ChatBridge chatBridge;
     private final JTextArea textArea = new JTextArea(4, 60);
     private final JButton sendButton = new JButton("Send");
+    private final Runnable beforeFocusRequest;
 
     public InputPanel(AppState appState, ChatBridge chatBridge, ResponseListener listener) {
+        this(appState, chatBridge, listener, () -> {});
+    }
+
+    public InputPanel(AppState appState, ChatBridge chatBridge, ResponseListener listener,
+                      Runnable beforeFocusRequest) {
         super(new BorderLayout(6, 6));
         this.appState = appState;
         this.chatBridge = chatBridge;
+        this.beforeFocusRequest = beforeFocusRequest == null ? () -> {} : beforeFocusRequest;
 
         textArea.setLineWrap(true);
         textArea.setWrapStyleWord(true);
@@ -34,6 +43,7 @@ public class InputPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
         add(scrollPane, BorderLayout.CENTER);
         add(actions, BorderLayout.EAST);
+        installFocusRecovery(scrollPane);
 
         sendButton.addActionListener(e -> send(listener));
         textArea.getDocument().addDocumentListener(new DocumentListener() {
@@ -52,6 +62,29 @@ public class InputPanel extends JPanel {
 
         appState.addListener((prev, current) -> refreshSendEnabled());
         refreshSendEnabled();
+    }
+
+    private void installFocusRecovery(JScrollPane scrollPane) {
+        MouseAdapter focusRecovery = new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                requestInputFocus();
+            }
+        };
+
+        addMouseListener(focusRecovery);
+        textArea.addMouseListener(focusRecovery);
+        scrollPane.addMouseListener(focusRecovery);
+        scrollPane.getViewport().addMouseListener(focusRecovery);
+    }
+
+    private void requestInputFocus() {
+        beforeFocusRequest.run();
+        textArea.requestFocusInWindow();
+        SwingUtilities.invokeLater(() -> {
+            KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+            textArea.requestFocusInWindow();
+        });
     }
 
     private void send(ResponseListener listener) {
