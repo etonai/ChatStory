@@ -4,9 +4,16 @@ import com.chatstory.UiThread;
 import com.chatstory.context.ContextFileStore;
 
 import javax.swing.*;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -19,6 +26,9 @@ public class ContextPanel extends JPanel {
     private final JLabel statusLabel = new JLabel(" ");
     private final JLabel stagingPathLabel;
     private final JButton stageButton = new JButton("Stage Checked");
+
+    private final JTextArea viewerArea = new JTextArea();
+    private final JSplitPane splitPane;
 
     public ContextPanel(ContextFileStore contextFileStore) {
         super(new BorderLayout(6, 6));
@@ -33,10 +43,21 @@ public class ContextPanel extends JPanel {
 
         checklistPanel.setLayout(new BoxLayout(checklistPanel, BoxLayout.Y_AXIS));
 
-        JScrollPane scrollPane = new JScrollPane(checklistPanel,
+        JScrollPane checklistScroll = new JScrollPane(checklistPanel,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        checklistScroll.getVerticalScrollBar().setUnitIncrement(16);
+
+        viewerArea.setEditable(false);
+        viewerArea.setLineWrap(true);
+        viewerArea.setWrapStyleWord(true);
+        installViewerCopyMenu();
+        JScrollPane viewerScroll = new JScrollPane(viewerArea,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, checklistScroll, viewerScroll);
+        splitPane.setResizeWeight(1.0);
 
         JButton addButton    = new JButton("Add Files");
         JButton removeButton = new JButton("Remove Checked");
@@ -57,8 +78,11 @@ public class ContextPanel extends JPanel {
         south.add(stagingPathLabel, BorderLayout.CENTER);
         south.add(statusLabel,     BorderLayout.SOUTH);
 
-        add(scrollPane, BorderLayout.CENTER);
-        add(south,      BorderLayout.SOUTH);
+        add(splitPane, BorderLayout.CENTER);
+        add(south,     BorderLayout.SOUTH);
+
+        // Collapse viewer until first use; must defer until component is realized
+        SwingUtilities.invokeLater(() -> splitPane.setDividerLocation(1.0));
 
         for (Path entry : contextFileStore.getEntries()) {
             addCheckbox(entry);
@@ -102,10 +126,89 @@ public class ContextPanel extends JPanel {
         cb.setAlignmentX(Component.LEFT_ALIGNMENT);
         cb.addItemListener(e -> updateStageButton());
 
+        cb.addMouseListener(new MouseAdapter() {
+            @Override public void mousePressed(MouseEvent e)  { maybeShowViewMenu(e, path); }
+            @Override public void mouseReleased(MouseEvent e) { maybeShowViewMenu(e, path); }
+        });
+
         checklistPanel.add(cb);
         checklistPanel.revalidate();
         checklistPanel.repaint();
         updateStageButton();
+    }
+
+    private void installViewerCopyMenu() {
+        JPopupMenu menu = new JPopupMenu();
+        JMenuItem copyItem = new JMenuItem("Copy");
+        copyItem.addActionListener(e -> {
+            String selected = viewerArea.getSelectedText();
+            if (selected != null && !selected.isEmpty()) {
+                StringSelection ss = new StringSelection(selected);
+                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
+            }
+        });
+        menu.add(copyItem);
+
+        menu.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                String sel = viewerArea.getSelectedText();
+                copyItem.setEnabled(sel != null && !sel.isEmpty());
+            }
+            @Override public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
+            @Override public void popupMenuCanceled(PopupMenuEvent e) {}
+        });
+
+        viewerArea.addMouseListener(new MouseAdapter() {
+            @Override public void mousePressed(MouseEvent e)  { maybeShowCopyMenu(e); }
+            @Override public void mouseReleased(MouseEvent e) { maybeShowCopyMenu(e); }
+            private void maybeShowCopyMenu(MouseEvent e) {
+                if (e.isPopupTrigger()) menu.show(viewerArea, e.getX(), e.getY());
+            }
+        });
+    }
+
+    private void maybeShowViewMenu(MouseEvent e, Path path) {
+        if (!e.isPopupTrigger()) return;
+        JPopupMenu menu = new JPopupMenu();
+
+        JMenuItem viewItem = new JMenuItem("View");
+        viewItem.addActionListener(ev -> viewFile(path));
+        menu.add(viewItem);
+
+        JMenuItem copyItem = new JMenuItem("Copy Contents");
+        copyItem.addActionListener(ev -> copyFileContents(path));
+        menu.add(copyItem);
+
+        menu.show(e.getComponent(), e.getX(), e.getY());
+    }
+
+    private void copyFileContents(Path path) {
+        try {
+            String content = Files.readString(path, StandardCharsets.UTF_8);
+            StringSelection ss = new StringSelection(content);
+            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Could not read file:\n" + ex.getMessage(),
+                    "Copy Failed",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void viewFile(Path path) {
+        String content;
+        try {
+            content = Files.readString(path, StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            content = "Could not read file: " + ex.getMessage();
+        }
+        viewerArea.setText(content);
+        viewerArea.setCaretPosition(0);
+
+        if (splitPane.getDividerLocation() >= splitPane.getHeight() - splitPane.getDividerSize() - 10) {
+            splitPane.setDividerLocation(0.55);
+        }
     }
 
     private void removeChecked() {

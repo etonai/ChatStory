@@ -12,6 +12,7 @@ public class NativeThemeApplier {
     private static final Color DARK_TEXT = new Color(232, 234, 237);
     private static final Color DARK_MUTED = new Color(176, 181, 189);
     private static final Color DARK_BORDER = new Color(76, 82, 90);
+    private static final Color DARK_TAB_SELECTED = new Color(70, 75, 85);
 
     private static final Color LIGHT_BG = new Color(242, 242, 242);
     private static final Color LIGHT_PANEL = new Color(250, 250, 250);
@@ -19,14 +20,29 @@ public class NativeThemeApplier {
     private static final Color LIGHT_TEXT = new Color(30, 30, 30);
     private static final Color LIGHT_MUTED = new Color(75, 75, 75);
     private static final Color LIGHT_BORDER = new Color(190, 190, 190);
+    private static final Color LIGHT_TAB_SELECTED = Color.WHITE;
 
     public void apply(Window window, NativeTheme theme) {
-        applyTo(window, theme == null ? NativeTheme.DARK : theme);
+        NativeTheme resolved = theme == null ? NativeTheme.DARK : theme;
+        applyTabUiDefaults(resolved);
+        applyTo(window, resolved);
         SwingUtilities.updateComponentTreeUI(window);
-        applyTo(window, theme == null ? NativeTheme.DARK : theme);
+        applyTo(window, resolved);
         window.invalidate();
         window.validate();
         window.repaint();
+    }
+
+    private void applyTabUiDefaults(NativeTheme theme) {
+        if (theme == NativeTheme.LIGHT) {
+            UIManager.put("TabbedPane.selected", LIGHT_TAB_SELECTED);
+            UIManager.put("TabbedPane.foreground", LIGHT_TEXT);
+            UIManager.put("TabbedPane.selectedForeground", LIGHT_TEXT);
+        } else {
+            UIManager.put("TabbedPane.selected", DARK_TAB_SELECTED);
+            UIManager.put("TabbedPane.foreground", DARK_TEXT);
+            UIManager.put("TabbedPane.selectedForeground", DARK_TEXT);
+        }
     }
 
     private void applyTo(Component component, NativeTheme theme) {

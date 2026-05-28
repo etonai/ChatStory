@@ -20,7 +20,7 @@ public class OutputPanel extends JPanel {
     private final JTextArea textArea = new JTextArea();
     private final JButton addToCanonButton = new JButton("Add to Canon");
 
-    public OutputPanel(CanonStore canonStore, Runnable onCanonAdded, Consumer<String> onSendPrompt) {
+    public OutputPanel(CanonStore canonStore, Consumer<String> onCanonAdded, Consumer<String> onSendPrompt) {
         super(new BorderLayout(6, 6));
         setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
 
@@ -36,8 +36,9 @@ public class OutputPanel extends JPanel {
 
         addToCanonButton.setEnabled(false);
         addToCanonButton.addActionListener(e -> {
-            canonStore.add(textArea.getText());
-            onCanonAdded.run();
+            String text = textArea.getText();
+            canonStore.add(text);
+            onCanonAdded.accept(text);
             addToCanonButton.setText("Added!");
             Timer revert = new Timer(1000, ev -> addToCanonButton.setText("Add to Canon"));
             revert.setRepeats(false);

@@ -42,7 +42,8 @@ public class AppFrame extends JFrame {
         statusLabel.setForeground(Color.DARK_GRAY);
         CanonStore canonStore = new CanonStore();
         leftPane = new LeftPanePanel(canonStore,
-                prompt -> chatBridge.sendPrompt(prompt, statusResponseListener("Correction sent")));
+                prompt -> chatBridge.sendPrompt(prompt, statusResponseListener("Correction sent")),
+                () -> browser.setFocus(false));
         ParsePreviewPanel parsePreviewPanel = new ParsePreviewPanel();
         JTabbedPane rightTabs = new JTabbedPane();
         rightTabs.addTab("MAIN", new JPanel(new BorderLayout()));

@@ -1,11 +1,14 @@
 package com.chatstory.ui;
 
-import com.chatstory.UiThread;
 import com.chatstory.canon.CanonStore;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -13,36 +16,70 @@ import java.nio.file.Files;
 
 public class CanonPanel extends JPanel {
 
-    private final CanonStore canonStore;
     private final JTextArea textArea = new JTextArea();
     private final JButton saveButton = new JButton("Save");
+    private final JButton clearButton = new JButton("Clear");
 
-    public CanonPanel(CanonStore canonStore) {
+    public CanonPanel(CanonStore canonStore, Runnable beforeFocusRequest) {
         super(new BorderLayout(6, 6));
-        this.canonStore = canonStore;
         setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
 
-        textArea.setEditable(false);
+        textArea.setEditable(true);
         textArea.setLineWrap(true);
         textArea.setWrapStyleWord(true);
 
         saveButton.setEnabled(false);
         saveButton.addActionListener(e -> saveToFile());
 
+        clearButton.setEnabled(false);
+        clearButton.addActionListener(e -> textArea.setText(""));
+
+        textArea.getDocument().addDocumentListener(new DocumentListener() {
+            @Override public void insertUpdate(DocumentEvent e)  { updateButtons(); }
+            @Override public void removeUpdate(DocumentEvent e)  { updateButtons(); }
+            @Override public void changedUpdate(DocumentEvent e) { updateButtons(); }
+            private void updateButtons() {
+                boolean hasContent = !textArea.getText().isBlank();
+                saveButton.setEnabled(hasContent);
+                clearButton.setEnabled(hasContent);
+            }
+        });
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        buttonPanel.setOpaque(false);
+        buttonPanel.add(clearButton);
+        buttonPanel.add(saveButton);
+
         JPanel header = new JPanel(new BorderLayout());
         header.add(new JLabel("Canon"), BorderLayout.CENTER);
-        header.add(saveButton, BorderLayout.EAST);
+        header.add(buttonPanel, BorderLayout.EAST);
 
         add(header, BorderLayout.NORTH);
-        add(new JScrollPane(textArea), BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        add(scrollPane, BorderLayout.CENTER);
+
+        MouseAdapter focusRecovery = new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                beforeFocusRequest.run();
+                textArea.requestFocusInWindow();
+                SwingUtilities.invokeLater(() -> {
+                    KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+                    textArea.requestFocusInWindow();
+                });
+            }
+        };
+        textArea.addMouseListener(focusRecovery);
+        scrollPane.addMouseListener(focusRecovery);
+        scrollPane.getViewport().addMouseListener(focusRecovery);
     }
 
-    public void refresh() {
-        UiThread.run(() -> {
-            textArea.setText(canonStore.export());
-            textArea.setCaretPosition(0);
-            saveButton.setEnabled(!canonStore.isEmpty());
-        });
+    public void appendEntry(String text) {
+        if (text == null || text.isBlank()) return;
+        String current = textArea.getText();
+        String updated = current.isBlank() ? text : current + "\n\n---\n\n" + text;
+        textArea.setText(updated);
+        textArea.setCaretPosition(0);
     }
 
     private void saveToFile() {
@@ -59,7 +96,7 @@ public class CanonPanel extends JPanel {
         }
 
         try {
-            Files.writeString(file.toPath(), canonStore.export(), StandardCharsets.UTF_8);
+            Files.writeString(file.toPath(), textArea.getText(), StandardCharsets.UTF_8);
             saveButton.setText("Saved!");
             Timer revert = new Timer(1200, ev -> saveButton.setText("Save"));
             revert.setRepeats(false);

@@ -10,10 +10,11 @@ public class LeftPanePanel extends JPanel {
 
     private final OutputPanel outputPanel;
 
-    public LeftPanePanel(CanonStore canonStore, Consumer<String> onSendPrompt) {
+    public LeftPanePanel(CanonStore canonStore, Consumer<String> onSendPrompt,
+                         Runnable beforeFocusRequest) {
         super(new BorderLayout());
-        CanonPanel canonPanel = new CanonPanel(canonStore);
-        outputPanel = new OutputPanel(canonStore, canonPanel::refresh, onSendPrompt);
+        CanonPanel canonPanel = new CanonPanel(canonStore, beforeFocusRequest);
+        outputPanel = new OutputPanel(canonStore, canonPanel::appendEntry, onSendPrompt);
 
         JTabbedPane tabs = new JTabbedPane();
         tabs.addTab("Response", outputPanel);
