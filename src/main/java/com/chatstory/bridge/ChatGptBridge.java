@@ -73,6 +73,14 @@ public class ChatGptBridge implements ChatBridge {
         startPrompt(prompt, listener, true, false);
     }
 
+    @Override
+    public void reset() {
+        synchronized (lock) {
+            clearActiveLocked();
+        }
+        appState.reset();
+    }
+
     private void startPrompt(String prompt, ResponseListener listener, boolean injectOnly,
                              boolean trackResponse) {
         String text = prompt == null ? "" : prompt;

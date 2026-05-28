@@ -1,6 +1,7 @@
 package com.chatstory;
 
 import com.chatstory.bridge.ChatGptBridge;
+import com.chatstory.bridge.CorrectionType;
 import com.chatstory.bridge.ResponseListener;
 import com.chatstory.browser.BrowserPanel;
 import com.chatstory.canon.CanonStore;
@@ -40,7 +41,8 @@ public class AppFrame extends JFrame {
         statusLabel = new JLabel(" Starting...");
         statusLabel.setForeground(Color.DARK_GRAY);
         CanonStore canonStore = new CanonStore();
-        leftPane = new LeftPanePanel(canonStore);
+        leftPane = new LeftPanePanel(canonStore,
+                prompt -> chatBridge.sendPrompt(prompt, statusResponseListener("Correction sent")));
         ParsePreviewPanel parsePreviewPanel = new ParsePreviewPanel();
         JTabbedPane rightTabs = new JTabbedPane();
         rightTabs.addTab("MAIN", new JPanel(new BorderLayout()));
@@ -58,9 +60,21 @@ public class AppFrame extends JFrame {
                 "DC3 test injection",
                 statusResponseListener("Test prompt injected")));
 
+        JButton redoBtn = new JButton("Redo");
+        redoBtn.setToolTipText("Redo the last story beat");
+        redoBtn.addActionListener(e -> chatBridge.sendPrompt(
+                CorrectionType.REDO_PROMPT,
+                statusResponseListener("Redo sent")));
+
+        JButton resetBtn = new JButton("Reset");
+        resetBtn.setToolTipText("Force app state back to Ready");
+        resetBtn.addActionListener(e -> chatBridge.reset());
+
         JPanel leftTools = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         leftTools.add(devToolsBtn);
         leftTools.add(testInjectBtn);
+        leftTools.add(redoBtn);
+        leftTools.add(resetBtn);
 
         JPanel toolbar = new JPanel(new BorderLayout(6, 0));
         toolbar.setBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));
@@ -97,7 +111,7 @@ public class AppFrame extends JFrame {
 
         appState.addListener((prev, current) ->
                 UiThread.run(() -> statusLabel.setText(" " + labelFor(current))));
-        modeModel.addListener((prev, current) ->
+modeModel.addListener((prev, current) ->
                 UiThread.run(() -> statusLabel.setText(" " + labelFor(appState.current()))));
         themeModel.addListener((prev, current) ->
                 UiThread.run(() -> themeApplier.apply(this, current)));

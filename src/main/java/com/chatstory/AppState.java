@@ -63,6 +63,10 @@ public class AppState {
         setState(state, next);
     }
 
+    public synchronized void reset() {
+        setState(state, State.Ready);
+    }
+
     // -------------------------------------------------------------------------
     // Queries
     // -------------------------------------------------------------------------
