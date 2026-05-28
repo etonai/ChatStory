@@ -6,9 +6,24 @@ ChatStory embeds a Chromium browser (via JCEF) alongside native UI panels for st
 
 ## Current Status
 
-**DevCycle 001 — JCEF Browser Viability Spike**
+**DevCycle 010 — Canon Editing, Tab Highlight Fix, Context File Viewer**
 
-The application is in early development. The current build is a proof-of-concept spike that validates the core browser bridge premise: can a Java desktop application reliably host ChatGPT, preserve a login session, and exchange data with the page via DOM interaction?
+DC 010 marks the start of substantive user testing. Initial functionality is in place — the core send pipeline, story mode, canon management, context file injection, and correction actions — along with a round of usability improvements. Development from this point is informed by real use.
+
+### Completed DevCycles
+
+| Cycle | Focus |
+|-------|-------|
+| DC 001 | JCEF browser viability spike |
+| DC 002 | App state machine and browser lifecycle |
+| DC 003 | Prompt injection pipeline |
+| DC 004 | Response extraction and streaming display |
+| DC 005 | Scene prompt builder (structured story input) |
+| DC 006 | Story mode toggle and dark theme |
+| DC 007 | Save responses as canon |
+| DC 008 | Context file injection |
+| DC 009 | Correction actions (right-click) and Redo/Reset toolbar buttons |
+| DC 010 | Editable canon panel, tab contrast fix, context file viewer with copy |
 
 ## Running
 
@@ -26,3 +41,11 @@ On first run, ~100 MB of Chromium native binaries are downloaded automatically.
 
 See `doc/planning/` for active DevCycle documents.
 See `doc/planning/ideas/` for the MVP implementation plan (`ClaudePlan03.md`).
+
+## AI-Assisted Development Notes
+
+This project is being built with AI coding assistance. Capacity usage recorded at notable milestones:
+
+| Milestone | Codex weekly usage | Claude weekly usage |
+|-----------|-------------------|---------------------|
+| After DC 010 | ~25% | ~3–6% (usage had reset) |
