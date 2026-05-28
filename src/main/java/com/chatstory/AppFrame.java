@@ -5,6 +5,7 @@ import com.chatstory.bridge.ResponseListener;
 import com.chatstory.browser.BrowserPanel;
 import com.chatstory.ui.InputPanel;
 import com.chatstory.ui.OutputPanel;
+import com.chatstory.ui.ParsePreviewPanel;
 import org.cef.browser.CefBrowser;
 
 import javax.swing.*;
@@ -28,6 +29,7 @@ public class AppFrame extends JFrame {
         statusLabel = new JLabel(" Starting...");
         statusLabel.setForeground(Color.DARK_GRAY);
         outputPanel = new OutputPanel();
+        ParsePreviewPanel parsePreviewPanel = new ParsePreviewPanel();
 
         JButton devToolsBtn = new JButton("DevTools");
         devToolsBtn.setToolTipText("Open Chromium DevTools for this page");
@@ -48,13 +50,10 @@ public class AppFrame extends JFrame {
         toolbar.add(leftTools, BorderLayout.WEST);
         toolbar.add(statusLabel, BorderLayout.CENTER);
 
-        JPanel placeholderPanel = new JPanel(new BorderLayout());
-        placeholderPanel.setBorder(BorderFactory.createTitledBorder("UI Test Panel"));
-
         JSplitPane browserAndRight = new JSplitPane(
                 JSplitPane.HORIZONTAL_SPLIT,
                 browserPanel.getUIComponent(),
-                placeholderPanel);
+                parsePreviewPanel);
         browserAndRight.setResizeWeight(0.82);
 
         JSplitPane mainSplit = new JSplitPane(
@@ -66,7 +65,8 @@ public class AppFrame extends JFrame {
         add(toolbar, BorderLayout.NORTH);
         add(mainSplit, BorderLayout.CENTER);
         add(new InputPanel(appState, chatBridge, statusResponseListener("Prompt submitted"),
-                        () -> browser.setFocus(false)),
+                        () -> browser.setFocus(false),
+                        parsePreviewPanel::setSegments),
                 BorderLayout.SOUTH);
 
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);

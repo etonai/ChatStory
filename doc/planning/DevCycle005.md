@@ -1,15 +1,15 @@
 # DevCycle 005: Inline Scene Input Parser
 
-**Status:** Planning
+**Status:** In Progress
 **Start Date:** 2026-05-28
 **Target Completion:** 2026-07-16
-**Focus:** Parse the native input box into ordered player-character dialogue and direction segments.
+**Focus:** Parse the native input box into ordered player-character dialogue and direction segments, then send an unambiguous structured prompt to ChatGPT.
 
 ---
 
 ## Goal
 
-Build the first story-input parser while keeping the UI and send flow simple. DC5 keeps a single native input box and interprets text outside angle brackets as spoken player-character dialogue, while text inside angle brackets becomes direction/action/instruction. This creates a clearer foundation for future prompt construction without changing the ChatGPT send contract yet.
+Build the first story-input parser while keeping the UI and send flow simple. DC5 keeps a single native input box and interprets text outside angle brackets as spoken player-character dialogue, while text inside angle brackets becomes direction/action/instruction. After parser preview validation, DC5 will also use the parsed segments to send an unambiguous `SCENE_INPUT_SEQUENCE` prompt to ChatGPT.
 
 ## Desired Outcome
 
@@ -27,6 +27,9 @@ At the end of DevCycle 005:
 - Pressing Enter in the native input sends the current text.
 - Pressing Ctrl+Enter inserts a newline in the native input.
 - Pressing Ctrl+Shift+Enter sends the entire current input as `DIRECTION`, even if it contains no angle brackets.
+- ChatGPT receives a structured prompt built from parsed segments rather than the raw input text.
+- `PLAYER_CHARACTER_SAYS` items are explicitly described as in-scene spoken dialogue, not questions to the assistant.
+- `DIRECTION` items are explicitly described as stage direction, action, tone guidance, or model-facing instruction.
 - Existing DC4 send, response extraction, output panel, and focus behavior remain intact.
 
 ---
@@ -35,7 +38,6 @@ At the end of DevCycle 005:
 
 DevCycle 005 does not include:
 
-- changing the prompt sent to ChatGPT
 - adding multiple input boxes
 - adding a full structured response format
 - parsing assistant responses
@@ -45,8 +47,9 @@ DevCycle 005 does not include:
 - persistence or session archive
 - escaping literal angle brackets unless needed by implementation feedback
 - broader input editor features beyond the DC5 keybinding changes
+- story-memory or continuity prompt context beyond the current parsed input
 
-DC5 is parser-first. The structured prompt that uses this parser should be planned after the parser behavior is stable.
+DC5 remains parser-first, but it now includes the first prompt-construction step that sends the parsed sequence to ChatGPT.
 
 ---
 
@@ -111,17 +114,45 @@ Parsed output:
 
 ---
 
+## Structured Prompt Contract
+
+The prompt sent to ChatGPT should be generated from the parsed segments, not from the raw input text.
+
+Minimum prompt structure:
+
+```text
+You are continuing an interactive fiction scene.
+
+The user's input below is a sequence of in-scene events.
+
+Rules:
+- Items marked PLAYER_CHARACTER_SAYS are literal spoken dialogue from the player's character inside the scene.
+- If a PLAYER_CHARACTER_SAYS item contains a question, treat it as a question spoken by the player's character inside the scene. Do not answer it as a direct question from the human user.
+- Items marked DIRECTION are stage direction, character action, tone guidance, scene instruction, or model-facing instruction. They are not spoken dialogue.
+- Preserve the event order.
+- Respond only as the other character(s) and narration in the scene.
+
+SCENE_INPUT_SEQUENCE:
+1. PLAYER_CHARACTER_SAYS: "Hi"
+2. DIRECTION: "I walk over to the bar. Jane looks upset."
+3. PLAYER_CHARACTER_SAYS: "How are you?"
+```
+
+DC5 may refine the exact wording during implementation, but it must preserve the distinction between in-scene player-character speech and model-facing direction.
+
+---
+
 ## Tasks
 
 ### Phase 1: Parser Model
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Add a small parser package or class for scene input parsing.
-- [ ] Define a segment type enum with `PLAYER_CHARACTER_SAYS` and `DIRECTION`.
-- [ ] Define an immutable parsed segment value object or record.
-- [ ] Define parser return shape as an ordered list of parsed segments.
-- [ ] Keep parser code independent of Swing and JCEF.
+- [x] Add a small parser package or class for scene input parsing.
+- [x] Define a segment type enum with `PLAYER_CHARACTER_SAYS` and `DIRECTION`.
+- [x] Define an immutable parsed segment value object or record.
+- [x] Define parser return shape as an ordered list of parsed segments.
+- [x] Keep parser code independent of Swing and JCEF.
 
 **Technical Notes:**
 
@@ -129,34 +160,36 @@ Prefer a pure Java parser that can be unit-tested without app startup. This shou
 
 ### Phase 2: Parser Behavior
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Parse all-dialogue input.
-- [ ] Parse all-direction input.
-- [ ] Parse mixed dialogue/direction input.
-- [ ] Preserve ordering across repeated alternating segments.
-- [ ] Trim surrounding whitespace.
-- [ ] Ignore empty parsed segments.
-- [ ] Auto-close an unclosed `<...` direction segment at end of input.
-- [ ] Treat stray `>` as dialogue text.
-- [ ] Decide and document behavior for nested `<` inside a direction segment.
+- [x] Parse all-dialogue input.
+- [x] Parse all-direction input.
+- [x] Parse mixed dialogue/direction input.
+- [x] Preserve ordering across repeated alternating segments.
+- [x] Trim surrounding whitespace.
+- [x] Ignore empty parsed segments.
+- [x] Auto-close an unclosed `<...` direction segment at end of input.
+- [x] Treat stray `>` as dialogue text.
+- [x] Decide and document behavior for nested `<` inside a direction segment.
 
 **Technical Notes:**
 
 The parser should be forgiving enough for fast writing. Missing `>` should not block the user. Stray `>` should not throw an error.
 
+Nested `<` inside a direction segment is treated as literal direction text. The next `>` closes the direction segment. Literal angle-bracket escaping remains deferred.
+
 ### Phase 3: Test Coverage
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Add unit tests for all-dialogue input.
-- [ ] Add unit tests for all-direction input.
-- [ ] Add unit tests for mixed ordered input.
-- [ ] Add unit tests for missing closing `>`.
-- [ ] Add unit tests for stray closing `>`.
-- [ ] Add unit tests for whitespace trimming and empty segment suppression.
-- [ ] Add unit tests for adjacent or repeated angle-bracket segments.
-- [ ] Run `gradlew.bat clean test`.
+- [x] Add unit tests for all-dialogue input.
+- [x] Add unit tests for all-direction input.
+- [x] Add unit tests for mixed ordered input.
+- [x] Add unit tests for missing closing `>`.
+- [x] Add unit tests for stray closing `>`.
+- [x] Add unit tests for whitespace trimming and empty segment suppression.
+- [x] Add unit tests for adjacent or repeated angle-bracket segments.
+- [x] Run `gradlew.bat clean test`.
 
 **Technical Notes:**
 
@@ -164,49 +197,73 @@ Tests should lock down the parser contract before DC6 uses the parsed output to 
 
 ### Phase 4: Preview or Inspection Surface
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Show parsed output in a simple native preview surface, preferably the right-side UI testing panel.
-- [ ] Keep the existing single input box unchanged.
-- [ ] Update preview as the input changes if trivial; otherwise update on send or via a simple button.
-- [ ] Make preview clearly distinguish `PLAYER_CHARACTER_SAYS` from `DIRECTION`.
-- [ ] Do not block send on parser output in DC5.
+- [x] Show parsed output in a simple native preview surface, preferably the right-side UI testing panel.
+- [x] Keep the existing single input box unchanged.
+- [x] Update preview as the input changes if trivial; otherwise update on send or via a simple button.
+- [x] Make preview clearly distinguish `PLAYER_CHARACTER_SAYS` from `DIRECTION`.
+- [x] Do not block send on parser output in DC5.
 
 **Technical Notes:**
 
 The right-side empty panel from DC4 exists for UI testing and is a good place to inspect parser output without changing the primary workflow. Keep this plain and reversible.
 
-### Phase 5: Documentation and Manual Validation
+### Phase 5: Input Keybindings
 
-**Status:** Planning
+**Status:** In Progress
 
-- [ ] Change native input keybindings so Enter sends the current input.
-- [ ] Change native input keybindings so Ctrl+Enter inserts a newline.
-- [ ] Add Ctrl+Shift+Enter to send the entire input as `DIRECTION`.
-- [ ] Ensure Ctrl+Shift+Enter works even when the input contains no `<...>` markers.
-- [ ] Decide how the direction-only override is represented in parser preview or send metadata.
-- [ ] Preserve button-based Send behavior.
-- [ ] Preserve Send disabled behavior for empty input and non-ready app states.
-- [ ] Add unit coverage if the keybinding behavior can be tested cleanly without brittle Swing tests.
+- [x] Change native input keybindings so Enter sends the current input.
+- [x] Change native input keybindings so Ctrl+Enter inserts a newline.
+- [x] Add Ctrl+Shift+Enter to send the entire input as `DIRECTION`.
+- [x] Ensure Ctrl+Shift+Enter works even when the input contains no `<...>` markers.
+- [x] Decide how the direction-only override is represented in parser preview or send metadata.
+- [x] Preserve button-based Send behavior.
+- [x] Preserve Send disabled behavior for empty input and non-ready app states.
+- [x] Add unit coverage if the keybinding behavior can be tested cleanly without brittle Swing tests.
 - [ ] Manually validate Enter, Ctrl+Enter, and Ctrl+Shift+Enter behavior.
 
 **Technical Notes:**
 
 The current behavior uses Ctrl+Enter to send. DC5 should invert this: Enter sends, Ctrl+Enter inserts a newline. Ctrl+Shift+Enter should send the whole input as `DIRECTION`, regardless of angle brackets. This is a send-time override, not a change to the default parser contract. These changes should be implemented in the native `InputPanel` only and should not affect browser focus handling or response extraction.
 
-### Phase 6: Documentation and Manual Validation
+The direction-only override is represented by updating the parser preview as a single `DIRECTION` segment immediately before send. The prompt text sent to ChatGPT now uses the structured prompt builder added in DC5.
+
+### Phase 6: Structured Prompt Construction
 
 **Status:** Planning
 
-- [ ] Update this DevCycle document with final parser decisions.
-- [ ] Manually validate the parser preview with representative story input.
-- [ ] Manually validate the input keybinding change.
-- [ ] Confirm DC4 send and response extraction still work after parser changes.
-- [ ] Record any deferred parser questions for DC6.
+- [ ] Add a pure Java prompt builder that consumes parsed segments.
+- [ ] Include rules explaining `PLAYER_CHARACTER_SAYS` as in-scene speech.
+- [ ] Include rules explaining questions inside `PLAYER_CHARACTER_SAYS` are not direct questions to ChatGPT.
+- [ ] Include rules explaining `DIRECTION` as action, stage direction, tone guidance, or model-facing instruction.
+- [ ] Preserve parsed segment order in a numbered `SCENE_INPUT_SEQUENCE`.
+- [ ] Ensure Ctrl+Shift+Enter direction-only override feeds the prompt builder as one `DIRECTION` segment.
+- [ ] Add unit tests for prompt construction.
+- [ ] Wire `InputPanel` sends to send the structured prompt to ChatGPT.
+- [ ] Keep the parser preview visible for debugging.
 
 **Technical Notes:**
 
-Manual validation should focus on confidence that the parser matches the writing convention, not on prompt quality. Prompt quality belongs in a later cycle.
+Prompt building should be separate from `InputPanel` and from the parser itself. Keep it pure Java and unit-tested. The preview can continue showing the parsed segments, while the actual sent text becomes the structured prompt.
+
+### Phase 7: Documentation and Manual Validation
+
+**Status:** In Progress
+
+- [x] Update this DevCycle document with final parser decisions.
+- [ ] Manually validate the parser preview with representative story input.
+- [ ] Manually validate the input keybinding change.
+- [ ] Manually validate that ChatGPT receives and responds to the structured prompt.
+- [ ] Manually validate that `PLAYER_CHARACTER_SAYS: "What is the problem?"` is treated as in-scene dialogue, not a direct user question.
+- [ ] Confirm DC4 send and response extraction still work after parser changes.
+- [x] Record any deferred parser questions for DC6.
+
+**Technical Notes:**
+
+Manual validation should focus on confidence that the parser matches the writing convention and that ChatGPT receives the structured prompt. Broader prompt quality tuning belongs in a later cycle.
+
+Parser implementation is complete and automated tests pass. Remaining DC5 work includes structured prompt construction plus manual validation in the running app.
 
 ---
 
@@ -341,6 +398,33 @@ Expected parsed/send interpretation:
 1. DIRECTION: "Jane looks upset and avoids eye contact."
 ```
 
+### Test 10: Structured Prompt Is Sent
+
+Input:
+
+```text
+Hi <I walk over to the bar. Jane looks upset.> How are you?
+```
+
+Pass:
+
+- ChatGPT receives a prompt containing `SCENE_INPUT_SEQUENCE`.
+- The sequence contains `PLAYER_CHARACTER_SAYS` and `DIRECTION` items in the correct order.
+- The raw angle-bracket shorthand is not the only thing sent to ChatGPT.
+
+### Test 11: Question Dialogue Is Not Treated As User Question
+
+Input:
+
+```text
+What is the problem?
+```
+
+Pass:
+
+- ChatGPT treats `What is the problem?` as dialogue spoken by the player's character.
+- ChatGPT does not answer by explaining the story problem directly to the human user.
+
 ---
 
 ## Success Criteria
@@ -353,6 +437,8 @@ DevCycle 005 is `Work Complete` when:
 - Enter sends the current native input.
 - Ctrl+Enter inserts a newline in the native input.
 - Ctrl+Shift+Enter sends the entire current input as `DIRECTION`.
+- ChatGPT receives a structured prompt generated from parsed segments.
+- Dialogue questions are treated as in-scene speech, not direct questions to ChatGPT.
 - Existing DC4 prompt sending and response extraction still work.
 - `gradlew.bat clean test` passes.
 - The DevCycle document records any parser behavior decisions that were clarified during implementation.
@@ -368,7 +454,7 @@ Only the user may approve `Verified`.
 - Parser preview should not make the UI feel like a new multi-window workflow.
 - Enter-to-send is faster but easier to trigger accidentally; Ctrl+Enter provides the explicit multiline path.
 - Ctrl+Shift+Enter creates a direction-only override path; make sure this remains visibly understandable in the preview or validation flow.
-- DC5 should not start prompt-format work, even though `PLAYER_CHARACTER_SAYS` is intentionally chosen for future prompt clarity.
+- Prompt construction should improve clarity without becoming a large prompt-engineering cycle.
 
 ---
 
@@ -377,15 +463,20 @@ Only the user may approve `Verified`.
 *Fill in when the cycle closes. Move this document to `doc/planning/completed/` afterward.*
 
 **Completion Date:** [YYYY-MM-DD]
-**Phases Completed:** [Pending]
-**Work Deferred:** [Pending]
+**Phases Completed:** Parser model, parser behavior, automated test coverage, and preview implementation are complete; prompt construction and manual validation pending.
+**Work Deferred:** Broader prompt-quality tuning and continuity context are deferred to a future cycle.
 
 **Accomplishments:**
-- [Pending]
+- Added pure Java scene input parser.
+- Added parser segment type and immutable segment record.
+- Added parser preview in the right-side panel.
+- Added Enter/Ctrl+Enter/Ctrl+Shift+Enter input keybindings.
+- Added parser unit tests.
+- [Pending] Added structured prompt construction from parsed segments.
 
 **Metrics:**
-- Files modified: [Pending]
-- Tests passing: [Pending]
+- Files modified: 8
+- Tests passing: `gradlew.bat clean test`
 
 **Lessons / Notes:**
-[Pending]
+DC5 began as parser-only, then expanded after parser preview validation to include the first structured prompt sent to ChatGPT.
