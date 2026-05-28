@@ -1,0 +1,5 @@
+Here are some of the things I want for DC5 and beyond...
+
+- In the input window, hitting Return automatically sends
+- In the input window, hitting CTRL-Return adds a return inside the input window
+-
