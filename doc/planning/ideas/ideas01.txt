@@ -1,0 +1,566 @@
+# Story Workstation — Concept Document
+
+## Overview
+
+Story Workstation is a desktop application designed to enhance long-form collaborative storytelling and simulation workflows using the browser version of ChatGPT.
+
+The application acts as a native Windows shell around ChatGPT while adding structured input composition, workflow automation, story parsing, correction tools, file management, and continuity assistance.
+
+The goal is not merely to wrap a browser, but to create a dedicated storytelling and simulation environment.
+
+---
+
+# Core Philosophy
+
+The application should:
+
+* Reduce repetitive browser interactions
+* Separate story content from prompt/control content
+* Preserve continuity and state awareness
+* Improve correction workflows
+* Make structured storytelling faster and cleaner
+* Treat stories, simulation state, and prompts as separate layers
+
+---
+
+# Technology Direction
+
+## Preferred Stack
+
+### Java + Embedded Chromium
+
+Recommended options:
+
+* Java 21+
+* JCEF (Java Chromium Embedded Framework)
+
+Alternative:
+
+* JavaFX + WebView (lighter but potentially less compatible)
+
+JCEF is preferred due to better compatibility with modern browser applications like ChatGPT.
+
+---
+
+# Application Model
+
+The application should function as:
+
+## A Native Storytelling Workstation
+
+NOT merely:
+
+* a browser wrapper
+* a macro utility
+* a prompt sender
+
+The system should become a structured environment for simulation-driven storytelling.
+
+---
+
+# High-Level Architecture
+
+```text
+Story Workstation
+├─ Embedded ChatGPT Browser
+├─ Prompt Composer System
+├─ Story Output Parser
+├─ File Bundle Manager
+├─ Story Correction System
+├─ Session State Manager
+├─ Continuity Tools
+├─ Story Archive
+└─ Workspace UI
+```
+
+---
+
+# Multi-Pane Input System
+
+## Purpose
+
+Separate different semantic types of input.
+
+This improves:
+
+* readability
+* formatting consistency
+* ChatGPT interpretation
+* workflow speed
+
+---
+
+# Input Panes
+
+## Dialogue Pane
+
+User types:
+
+```text
+Hi there
+```
+
+Wrapper sends:
+
+```text
+"Hi there"
+```
+
+Or structured format:
+
+```text
+::dialogue
+Hi there
+```
+
+---
+
+## Action Pane
+
+User types:
+
+```text
+I get a drink
+```
+
+Wrapper sends:
+
+```text
+(I get a drink)
+```
+
+Or structured format:
+
+```text
+::action
+I get a drink
+```
+
+---
+
+## Additional Possible Panes
+
+### Instruction Pane
+
+```text
+::instruction
+Increase scene tension slightly
+```
+
+### Correction Pane
+
+```text
+::correction
+The highlighted line contradicts recent continuity.
+```
+
+### State Update Pane
+
+```text
+::state
+Morgan trust increased earlier in the scene.
+```
+
+### OOC / Meta Pane
+
+```text
+::ooc
+Pause scene progression after this beat.
+```
+
+---
+
+# Structured Tagging System
+
+## Recommended Long-Term Format
+
+```text
+::action
+...
+
+::dialogue
+...
+
+::state
+...
+
+::instruction
+...
+```
+
+Advantages:
+
+* easy to parse
+* visually clean
+* extensible
+* easier for AI interpretation
+* easier for application logic
+
+---
+
+# Legacy Compatibility Mode
+
+The system should also support traditional formatting:
+
+```text
+(I get a drink) "Hi there"
+```
+
+This allows compatibility with existing prompts and simulation controllers.
+
+---
+
+# Story Parsing System
+
+## Major Goal
+
+Separate:
+
+* prompts
+* control metadata
+* generated story content
+
+This allows the application to display only the narrative output.
+
+---
+
+# Internal Conversation Layers
+
+## Layer 1 — User Source Input
+
+Raw user prompts and controls.
+
+Example:
+
+```text
+::action
+I sit down
+
+::dialogue
+"How was rehearsal?"
+```
+
+---
+
+## Layer 2 — Assistant Raw Response
+
+Complete response returned by ChatGPT.
+
+Includes:
+
+* story
+* metadata
+* state
+* notes
+
+---
+
+## Layer 3 — Story Output
+
+Only the narrative scene text.
+
+Displayed in the primary reading interface.
+
+---
+
+## Layer 4 — Metadata
+
+Examples:
+
+* relationship values
+* beat headers
+* state deltas
+* debug information
+* continuity notes
+
+---
+
+# Recommended Assistant Output Format
+
+```xml
+<scene>
+...
+</scene>
+
+<relationship_state>
+...
+</relationship_state>
+
+<state_changes>
+...
+</state_changes>
+
+<notes>
+...
+</notes>
+```
+
+The workstation parses these sections and displays them separately.
+
+---
+
+# Workspace Layout Concept
+
+## Main Tabs
+
+```text
+Scene
+State
+Changes
+Notes
+Raw Prompt
+Raw Response
+```
+
+---
+
+# Inline Story Correction System
+
+## Problem
+
+Minor generation mistakes are common.
+
+Often the user can immediately identify the issue simply by highlighting the text.
+
+---
+
+# Correction Workflow
+
+User highlights text.
+
+Right-click menu or shortcut options:
+
+```text
+Rewrite Selection
+Continuity Error
+Wrong Character Voice
+State Error
+Relationship Error
+User Action Altered
+Scene Progressed Too Far
+General Mistake
+```
+
+---
+
+# Example Generated Correction Prompt
+
+```text
+::correction
+type: continuity_error
+
+::selected_text
+"..."
+
+::instruction
+Identify the issue and rewrite only the affected section.
+```
+
+---
+
+# Correction Shortcuts
+
+Example hotkeys:
+
+```text
+Ctrl+Alt+R → Rewrite selection
+Ctrl+Alt+C → Continuity error
+Ctrl+Alt+V → Voice error
+Ctrl+Alt+S → State error
+Ctrl+Alt+E → General error
+```
+
+---
+
+# Scoped Rewrite Behavior
+
+The workstation should encourage localized rewrites.
+
+Example wrapper-generated instructions:
+
+```text
+Fix only the selected issue.
+Do not rewrite unrelated material.
+Preserve canon unless directly contradicted.
+```
+
+This reduces overcorrection and narrative drift.
+
+---
+
+# File Upload Workflow
+
+## Problem
+
+Uploading repeated sets of files in the browser is click-intensive.
+
+---
+
+# Upload Profiles
+
+Example:
+
+```text
+Profile: Singventory Core Files
+
+Includes:
+- src/...
+- controller/...
+- markdown/...
+```
+
+User workflow:
+
+```text
+Select profile → Upload
+```
+
+---
+
+# File Bundle Manager
+
+Capabilities:
+
+* multi-directory selection
+* reusable upload sets
+* include/exclude rules
+* extension filtering
+* ignored directories
+* staging generation
+
+---
+
+# Ignore Rules
+
+Examples:
+
+```text
+build/
+.gradle/
+.git/
+node_modules/
+out/
+.idea/
+```
+
+---
+
+# Upload Strategies
+
+## Option 1 — Staging Folder
+
+Generate temporary upload directory.
+
+## Option 2 — ZIP Bundle
+
+Generate:
+
+```text
+ProjectBundle.zip
+```
+
+## Option 3 — Markdown Bundle
+
+Generate:
+
+````markdown
+# File: App.java
+
+```java
+...
+````
+
+````
+
+This is especially useful for code review workflows.
+
+---
+
+# Story Session Model
+
+The workstation should treat sessions as structured projects.
+
+Each session may contain:
+
+- story transcript
+- parsed scenes
+- state history
+- uploaded files
+- relationship snapshots
+- correction history
+- notes
+- bookmarks
+
+---
+
+# Potential Future Features
+
+## Continuity Assistance
+
+Automatically track:
+
+- relationships
+- timeline
+- unresolved threads
+- locations
+- outfit continuity
+- emotional state
+
+---
+
+## Story Search
+
+Search:
+
+- dialogue
+- scenes
+- relationship shifts
+- locations
+- actions
+
+---
+
+## Canon Database
+
+Persistent structured reference data:
+
+```text
+Characters
+Locations
+Relationships
+History
+Rules
+````
+
+---
+
+## Story Visualization
+
+Possible future visual tools:
+
+* relationship graphs
+* timeline view
+* beat maps
+* scene trees
+* branching history
+
+---
+
+# Long-Term Vision
+
+The long-term goal is to create a dedicated AI-assisted narrative simulation environment.
+
+The browser version of ChatGPT becomes only one component inside a much larger structured storytelling workflow.
+
+The workstation handles:
+
+* organization
+* continuity
+* formatting
+* parsing
+* correction
+* archival
+* workflow acceleration
+* state management
+
+while ChatGPT handles narrative generation and reasoning.

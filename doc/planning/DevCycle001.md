@@ -1,0 +1,158 @@
+# DevCycle 001: JCEF Browser Viability Spike
+
+**Status:** Planning
+**Start Date:** 2026-05-28
+**Target Completion:** 2026-06-11
+**Focus:** Prove that JCEF can launch on this machine, render ChatGPT, support manual login, and preserve a session across restarts.
+
+---
+
+## Goal
+
+Validate the core technical premise of the Story Workstation before committing to any application architecture. This DevCycle answers one question: can a Java Swing application embed a Chromium browser, load ChatGPT, complete a real login flow, and keep that session alive across restarts?
+
+The code produced here is intentionally minimal and may be temporary. DevCycle 002 will restructure or replace it once the JCEF path is proven.
+
+## Desired Outcome
+
+At the end of this DevCycle:
+
+- A Java application launches a Swing window containing a JCEF-embedded Chromium browser
+- ChatGPT loads and operates normally inside that window
+- JCEF DevTools can be opened and used to inspect the live ChatGPT DOM
+- The user can complete a manual login using their actual intended authentication method
+- The logged-in session survives closing and relaunching the application
+- A developer can repeat the launch from a documented command in `BUILDING.md`
+
+If these five criteria are met, the browser integration layer is viable and DevCycle 002 can begin building the real application scaffold on top of it.
+
+---
+
+## Tasks
+
+### Phase 1: JCEF Research and Minimum Launch
+
+**Status:** Planning
+
+- [ ] Research available JCEF distributions — evaluate `dev.datlag:jcef`, the official JCEF build repository, and any other current options
+- [ ] Confirm the chosen distribution supports Windows x64 and Java 21
+- [ ] Confirm whether the artifact bundles Chromium native binaries or requires separate acquisition and placement
+- [ ] Confirm whether the chosen integration approach is compatible with a future `jpackage`-based Windows installer — if not, choose a different approach before proceeding
+- [ ] Create a minimal Gradle project (Kotlin DSL) with the JCEF dependency wired up
+- [ ] Write the minimum Java entry point to open a Swing `JFrame` containing a JCEF browser component
+- [ ] Navigate to `https://chatgpt.com` on launch and confirm it renders correctly
+- [ ] Add a way to open JCEF DevTools (a button, menu item, or keyboard shortcut) and confirm it works
+
+**Technical Notes:**
+
+The distribution research is the first blocker. Some questions can only be answered by running code — minimal throwaway spike code is expected and acceptable here. The goal is to verify the dependency before committing to it as the foundation of the real application.
+
+JCEF requires native binaries (`.dll` on Windows) to be present at runtime. The startup code should detect missing binaries and print a clear error rather than silently crashing with an opaque JVM error.
+
+The JCEF initialization sequence is order-sensitive. `CefApp` must be initialized on the correct thread before any browser components are created. Refer to the JCEF sample code for the correct initialization pattern for the chosen distribution.
+
+Register a JVM shutdown hook to call `CefApp.getInstance().dispose()` to prevent native library leaks on exit.
+
+DevTools access: `CefBrowser.showDevTools(...)` opens a separate DevTools window. This must remain accessible throughout all MVP DevCycles for DOM inspection and selector validation.
+
+---
+
+### Phase 2: Login, Session Persistence, and Documentation
+
+**Status:** Planning
+
+- [ ] Configure a persistent browser profile directory so cookies and session data survive application restarts
+  - Preferred Windows path: `%LOCALAPPDATA%\ChatStory\profile`
+  - Fallback if `LOCALAPPDATA` is unavailable: `{user.home}/.chatstory/profile`
+- [ ] Attempt a complete manual login using the **actual intended authentication method** (e.g. Google SSO, email/password — test the method that will be used day-to-day; a different method may not validate the real login flow)
+- [ ] Close and relaunch the application; confirm the user remains logged in
+- [ ] Attempt login again if session did not persist; document any additional configuration required to make it work
+- [ ] Document all findings in `BUILDING.md`:
+  - Exact JCEF distribution name, version, and source
+  - How native binaries are acquired and where they are placed
+  - Any required JVM flags or environment setup
+  - The repeatable `./gradlew run` command (or equivalent)
+  - Any known issues or workarounds discovered during the spike
+
+**Technical Notes:**
+
+Session persistence depends on the JCEF `CefSettings.cache_path` being set to the profile directory before `CefApp` is initialized. If this is not set, each launch starts a fresh browser session with no cookies.
+
+ChatGPT authentication may involve OAuth redirects, popup windows, or other flows that require JCEF to handle correctly. If the login flow fails to complete inside the embedded browser, document exactly where it fails and what the error or behavior is — this is a Phase 2 blocker if it cannot be resolved.
+
+`BUILDING.md` should be complete enough that a developer setting up the project for the first time can follow it without prior JCEF knowledge. Write it while the setup is fresh.
+
+---
+
+### Stretch Goal: CefMessageRouter Ping
+
+**Status:** Planning
+**Note:** Attempt this only after Phase 1 and Phase 2 success criteria are met. Do not let this block DevCycle 001 completion.
+
+- [ ] Add a `CefMessageRouter` to the browser client
+- [ ] Add a small JavaScript snippet that calls `window.cefQuery({ request: JSON.stringify({ type: "ping" }) })` on page load
+- [ ] Register a Java-side query handler that logs the received ping message
+- [ ] Confirm the round-trip works: JS sends, Java receives, result is logged
+
+**Technical Notes:**
+
+The ping exists only to confirm the `CefMessageRouter` channel works before DevCycle 002 builds the full bridge protocol on top of it. A working ping removes one unknown from DevCycle 002 planning.
+
+If the ping is not completed in this DevCycle, it becomes the first task of DevCycle 002.
+
+---
+
+## Open Questions
+
+1. **Which JCEF distribution will be used?**
+   Answer this during Phase 1 research. Evaluate at least two options before choosing. Document the decision and reasoning in `BUILDING.md`.
+
+2. **Which login method should be tested?**
+   Use the authentication method the user will actually use. Confirm this with the user before Phase 2 begins if there is any ambiguity.
+
+3. **Should `BUILDING.md` be a new file or a section of `README.md`?**
+   Use `README.md` if JCEF setup fits in a few short steps. Create a dedicated `BUILDING.md` if native binary setup, JVM flags, or known issues require more than a page.
+
+---
+
+## Notes and Risks
+
+- **JCEF native binaries are the most likely first blocker.** Distribution availability, architecture matching, and runtime path configuration can consume significant time. Treat Phase 1 as a research task, not just a dependency addition.
+
+- **ChatGPT login may not complete in embedded Chromium.** Some authentication flows (WebAuthn, passkeys, device verification) may behave differently or fail entirely in an embedded browser. If login does not work, document exactly what fails — this is a go/no-go decision point for the entire project.
+
+- **Session persistence requires correct `CefSettings.cache_path` configuration.** This must be set before `CefApp` is initialized. If set after, it has no effect and the session will not persist.
+
+- **Spike code does not need to be production quality.** DevCycle 001 code is a proof of concept. DevCycle 002 will build the real application scaffold. Do not over-engineer the spike.
+
+- **DevCycle 001 scope is intentionally narrow.** No native input, no prompt injection, no response extraction, no state machine. Anything beyond proving the browser is out of scope and should be deferred.
+
+---
+
+## Completion Summary
+
+*Fill in when DevCycle 001 closes. Move this document to `doc/planning/completed/` afterward.*
+
+**Completion Date:** —
+**Phases Completed:** —
+**Work Deferred:** —
+
+**Accomplishments:**
+-
+
+**JCEF Distribution Chosen:**
+-
+
+**Login Method Tested:**
+-
+
+**Session Persistence Confirmed:** Yes / No / Partial
+
+**CefMessageRouter Ping Completed:** Yes / No (deferred to DC-002)
+
+**Metrics:**
+- Files created: —
+- JCEF artifact: —
+
+**Lessons / Notes:**
+*Surprises, decisions made, things that worked or didn't — especially anything that should inform DevCycle 002 planning.*
