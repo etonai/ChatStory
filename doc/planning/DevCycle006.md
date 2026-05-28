@@ -1,6 +1,6 @@
 # DevCycle 006: Story Mode Toggle and Dark Mode
 
-**Status:** Planning
+**Status:** In Progress
 **Start Date:** 2026-05-28
 **Target Completion:** 2026-07-23
 **Focus:** Add Story Mode vs Unassisted Mode behavior and make the app default to a darker theme with a light-mode option.
@@ -112,13 +112,13 @@ Light mode should be readable and roughly match the current Swing look, without 
 
 ### Phase 1: App Mode Model
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Add an app mode model with `STORY` and `UNASSISTED`.
-- [ ] Default to `STORY`.
-- [ ] Make mode observable by UI components that need it.
-- [ ] Keep mode independent from `AppState` unless state-machine changes are needed.
-- [ ] Add unit tests for mode defaults or mode holder behavior if a testable model is introduced.
+- [x] Add an app mode model with `STORY` and `UNASSISTED`.
+- [x] Default to `STORY`.
+- [x] Make mode observable by UI components that need it.
+- [x] Keep mode independent from `AppState` unless state-machine changes are needed.
+- [x] Add unit tests for mode defaults or mode holder behavior if a testable model is introduced.
 
 **Technical Notes:**
 
@@ -126,14 +126,14 @@ Prefer a small model separate from `AppState`, because `AppState` currently repr
 
 ### Phase 2: Mode Controls
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Add a `Configuration` tab to the right pane.
-- [ ] Add a Story Mode / Unassisted Mode toggle to the `Configuration` tab.
-- [ ] Show the current mode clearly.
-- [ ] Leave the `MAIN` tab available for future non-configuration UI.
-- [ ] Keep the parsed-input tab as a debug tab.
-- [ ] Ensure switching modes does not clear the current input unless there is a strong reason.
+- [x] Add a `Configuration` tab to the right pane.
+- [x] Add a Story Mode / Unassisted Mode toggle to the `Configuration` tab.
+- [x] Show the current mode clearly.
+- [x] Leave the `MAIN` tab available for future non-configuration UI.
+- [x] Keep the parsed-input tab as a debug tab.
+- [x] Ensure switching modes does not clear the current input unless there is a strong reason.
 
 **Technical Notes:**
 
@@ -141,13 +141,13 @@ Use the existing right-pane tabs from DC5. Keep the control UI simple; this is o
 
 ### Phase 3: Story Mode Send Path
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Preserve DC5 Story Mode structured prompt sending.
-- [ ] Preserve parser preview behavior.
-- [ ] Preserve Enter, Ctrl+Enter, and Ctrl+Shift+Enter behavior.
-- [ ] Preserve assistant response extraction and output panel updates.
-- [ ] Add or update tests around prompt construction if mode changes affect it.
+- [x] Preserve DC5 Story Mode structured prompt sending.
+- [x] Preserve parser preview behavior.
+- [x] Preserve Enter, Ctrl+Enter, and Ctrl+Shift+Enter behavior.
+- [x] Preserve assistant response extraction and output panel updates.
+- [x] Add or update tests around prompt construction if mode changes affect it.
 
 **Technical Notes:**
 
@@ -155,14 +155,14 @@ Story Mode should feel unchanged from verified DC5 behavior.
 
 ### Phase 4: Unassisted Mode Send Path
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Send raw native input text in Unassisted Mode.
-- [ ] Do not wrap raw input in `SCENE_INPUT_SEQUENCE`.
-- [ ] Do not wait for assistant response extraction in Unassisted Mode.
-- [ ] Return to send-enabled state after user message confirmation.
-- [ ] Keep the browser visible as the source of truth for ChatGPT's response.
-- [ ] Preserve failure recovery for injection/send errors.
+- [x] Send raw native input text in Unassisted Mode.
+- [x] Do not wrap raw input in `SCENE_INPUT_SEQUENCE`.
+- [x] Do not wait for assistant response extraction in Unassisted Mode.
+- [x] Return to send-enabled state after user message confirmation.
+- [x] Keep the browser visible as the source of truth for ChatGPT's response.
+- [x] Preserve failure recovery for injection/send errors.
 
 **Technical Notes:**
 
@@ -170,13 +170,13 @@ This may require a bridge method or send option that performs DC3-style injectio
 
 ### Phase 5: Native Theme Model and Controls
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Add a native theme model or controller with `DARK` and `LIGHT`.
-- [ ] Default to `DARK`.
-- [ ] Add a Dark / Light control in the right-pane `Configuration` tab.
-- [ ] Apply theme changes to existing native panels.
-- [ ] Ensure theme switching can happen at runtime without restarting the app.
+- [x] Add a native theme model or controller with `DARK` and `LIGHT`.
+- [x] Default to `DARK`.
+- [x] Add a Dark / Light control in the right-pane `Configuration` tab.
+- [x] Apply theme changes to existing native panels.
+- [x] Ensure theme switching can happen at runtime without restarting the app.
 
 **Technical Notes:**
 
@@ -184,14 +184,14 @@ Do not try to theme the embedded ChatGPT web page in DC6. Focus on Swing/native 
 
 ### Phase 6: Dark Mode Styling
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Define restrained dark colors for native surfaces.
-- [ ] Style text areas, labels, buttons, tabs, split panes, and scroll panes where practical.
-- [ ] Keep contrast readable.
-- [ ] Avoid a single-hue purple/blue-heavy palette.
-- [ ] Ensure disabled buttons and status text remain legible.
-- [ ] Keep light mode functional.
+- [x] Define restrained dark colors for native surfaces.
+- [x] Style text areas, labels, buttons, tabs, split panes, and scroll panes where practical.
+- [x] Keep contrast readable.
+- [x] Avoid a single-hue purple/blue-heavy palette.
+- [x] Ensure disabled buttons and status text remain legible.
+- [x] Keep light mode functional.
 
 **Technical Notes:**
 
@@ -199,9 +199,9 @@ Prefer a small reusable theme application helper over hand-styling each componen
 
 ### Phase 7: Tests and Manual Validation
 
-**Status:** Planning
+**Status:** In Progress
 
-- [ ] Run `gradlew.bat clean test`.
+- [x] Run `gradlew.bat clean test`.
 - [ ] Manually validate Story Mode still parses and sends structured prompts.
 - [ ] Manually validate Story Mode still extracts responses.
 - [ ] Manually validate Unassisted Mode sends raw input.
@@ -346,15 +346,20 @@ Only the user may approve `Verified`.
 *Fill in when the cycle closes. Move this document to `doc/planning/completed/` afterward.*
 
 **Completion Date:** [YYYY-MM-DD]
-**Phases Completed:** [Pending]
-**Work Deferred:** [Pending]
+**Phases Completed:** Implementation phases are complete; manual validation remains.
+**Work Deferred:** Context, Canon continuity, correction menus, Redo, and preference persistence remain deferred to future cycles.
 
 **Accomplishments:**
-- [Pending]
+- Added observable Story/Unassisted mode model.
+- Added Configuration tab with mode and theme controls.
+- Preserved Story Mode structured prompt and response extraction.
+- Added Unassisted Mode raw-send path without response extraction.
+- Added observable native theme model and dark/light theme application.
+- Added tests for mode/theme defaults and Unassisted state recovery.
 
 **Metrics:**
-- Files modified: [Pending]
-- Tests passing: [Pending]
+- Files modified: 15
+- Tests passing: `gradlew.bat clean test`
 
 **Lessons / Notes:**
-[Pending]
+Unassisted Mode needed a bridge path that returns from `Sending` to `Ready` after user-message confirmation without weakening Story Mode's response-tracking flow.

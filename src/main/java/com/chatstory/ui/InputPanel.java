@@ -7,6 +7,8 @@ import com.chatstory.bridge.ResponseListener;
 import com.chatstory.input.SceneInputParser;
 import com.chatstory.input.ScenePromptBuilder;
 import com.chatstory.input.SceneInputSegment;
+import com.chatstory.mode.AppMode;
+import com.chatstory.mode.AppModeModel;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -22,6 +24,7 @@ import java.util.function.Consumer;
 public class InputPanel extends JPanel {
 
     private final AppState appState;
+    private final AppModeModel modeModel;
     private final ChatBridge chatBridge;
     private final JTextArea textArea = new JTextArea(4, 60);
     private final JButton sendButton = new JButton("Send");
@@ -31,19 +34,20 @@ public class InputPanel extends JPanel {
     private final Consumer<List<SceneInputSegment>> previewConsumer;
 
     public InputPanel(AppState appState, ChatBridge chatBridge, ResponseListener listener) {
-        this(appState, chatBridge, listener, () -> {}, segments -> {});
+        this(appState, new AppModeModel(), chatBridge, listener, () -> {}, segments -> {});
     }
 
     public InputPanel(AppState appState, ChatBridge chatBridge, ResponseListener listener,
                       Runnable beforeFocusRequest) {
-        this(appState, chatBridge, listener, beforeFocusRequest, segments -> {});
+        this(appState, new AppModeModel(), chatBridge, listener, beforeFocusRequest, segments -> {});
     }
 
-    public InputPanel(AppState appState, ChatBridge chatBridge, ResponseListener listener,
+    public InputPanel(AppState appState, AppModeModel modeModel, ChatBridge chatBridge, ResponseListener listener,
                       Runnable beforeFocusRequest,
                       Consumer<List<SceneInputSegment>> previewConsumer) {
         super(new BorderLayout(6, 6));
         this.appState = appState;
+        this.modeModel = modeModel == null ? new AppModeModel() : modeModel;
         this.chatBridge = chatBridge;
         this.beforeFocusRequest = beforeFocusRequest == null ? () -> {} : beforeFocusRequest;
         this.previewConsumer = previewConsumer == null ? segments -> {} : previewConsumer;
@@ -95,6 +99,7 @@ public class InputPanel extends JPanel {
         });
 
         appState.addListener((prev, current) -> refreshInputState());
+        this.modeModel.addListener((prev, current) -> refreshInputState());
         refreshInputState();
     }
 
@@ -135,10 +140,12 @@ public class InputPanel extends JPanel {
             refreshInputState();
             return;
         }
-        List<SceneInputSegment> segments = parseInput(directionOverride);
+        boolean storyMode = modeModel.current() == AppMode.STORY;
+        List<SceneInputSegment> segments = parseInput(directionOverride && storyMode);
         previewConsumer.accept(segments);
-        String prompt = promptBuilder.build(segments);
-        chatBridge.sendPrompt(prompt, new ResponseListener() {
+        String prompt = storyMode ? promptBuilder.build(segments) : input;
+        ChatBridge sender = chatBridge;
+        ResponseListener wrappedListener = new ResponseListener() {
             @Override
             public void onPromptSubmitted(long requestId) {
                 UiThread.run(() -> textArea.setText(""));
@@ -159,7 +166,12 @@ public class InputPanel extends JPanel {
             public void onError(long requestId, String errorCode, String message) {
                 listener.onError(requestId, errorCode, message);
             }
-        });
+        };
+        if (storyMode) {
+            sender.sendPrompt(prompt, wrappedListener);
+        } else {
+            sender.sendRawPrompt(prompt, wrappedListener);
+        }
     }
 
     private void refreshInputState() {

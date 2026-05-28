@@ -3,6 +3,11 @@ package com.chatstory;
 import com.chatstory.bridge.ChatGptBridge;
 import com.chatstory.bridge.ResponseListener;
 import com.chatstory.browser.BrowserPanel;
+import com.chatstory.mode.AppMode;
+import com.chatstory.mode.AppModeModel;
+import com.chatstory.theme.NativeThemeApplier;
+import com.chatstory.theme.NativeThemeModel;
+import com.chatstory.ui.ConfigurationPanel;
 import com.chatstory.ui.InputPanel;
 import com.chatstory.ui.OutputPanel;
 import com.chatstory.ui.ParsePreviewPanel;
@@ -17,6 +22,9 @@ public class AppFrame extends JFrame {
 
     private final JLabel statusLabel;
     private final OutputPanel outputPanel;
+    private final AppModeModel modeModel = new AppModeModel();
+    private final NativeThemeModel themeModel = new NativeThemeModel();
+    private final NativeThemeApplier themeApplier = new NativeThemeApplier();
 
     public AppFrame(AppState appState, BrowserPanel browserPanel, CefBrowser browser,
                     ChatGptBridge chatBridge) {
@@ -32,6 +40,7 @@ public class AppFrame extends JFrame {
         ParsePreviewPanel parsePreviewPanel = new ParsePreviewPanel();
         JTabbedPane rightTabs = new JTabbedPane();
         rightTabs.addTab("MAIN", new JPanel(new BorderLayout()));
+        rightTabs.addTab("Configuration", new ConfigurationPanel(modeModel, themeModel));
         rightTabs.addTab("Parsed Input", parsePreviewPanel);
 
         JButton devToolsBtn = new JButton("DevTools");
@@ -67,7 +76,7 @@ public class AppFrame extends JFrame {
 
         add(toolbar, BorderLayout.NORTH);
         add(mainSplit, BorderLayout.CENTER);
-        add(new InputPanel(appState, chatBridge, statusResponseListener("Prompt submitted"),
+        add(new InputPanel(appState, modeModel, chatBridge, statusResponseListener("Prompt submitted"),
                         () -> browser.setFocus(false),
                         parsePreviewPanel::setSegments),
                 BorderLayout.SOUTH);
@@ -83,8 +92,13 @@ public class AppFrame extends JFrame {
 
         appState.addListener((prev, current) ->
                 UiThread.run(() -> statusLabel.setText(" " + labelFor(current))));
+        modeModel.addListener((prev, current) ->
+                UiThread.run(() -> statusLabel.setText(" " + labelFor(appState.current()))));
+        themeModel.addListener((prev, current) ->
+                UiThread.run(() -> themeApplier.apply(this, current)));
 
         setVisible(true);
+        UiThread.run(() -> themeApplier.apply(this, themeModel.current()));
     }
 
     private String labelFor(AppState.State state) {
@@ -107,7 +121,9 @@ public class AppFrame extends JFrame {
             @Override
             public void onPromptSubmitted(long requestId) {
                 UiThread.run(() -> {
-                    outputPanel.clear();
+                    if (modeModel.current() == AppMode.STORY) {
+                        outputPanel.clear();
+                    }
                     statusLabel.setText(" " + successText);
                 });
             }

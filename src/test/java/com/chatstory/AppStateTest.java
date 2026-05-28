@@ -129,6 +129,15 @@ class AppStateTest {
     }
 
     @Test
+    void sendingToReadyForUnassistedPromptSubmission() {
+        toReady();
+        state.transition(AppState.State.InjectingPrompt);
+        state.transition(AppState.State.Sending);
+        state.transition(AppState.State.Ready);
+        assertEquals(AppState.State.Ready, state.current());
+    }
+
+    @Test
     void sendingToError() {
         toReady();
         state.transition(AppState.State.InjectingPrompt);

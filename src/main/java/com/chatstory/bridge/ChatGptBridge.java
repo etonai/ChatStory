@@ -42,6 +42,7 @@ public class ChatGptBridge implements ChatBridge {
     private String activePrompt;
     private ScheduledFuture<?> activeTimeout;
     private boolean injectOnly;
+    private boolean trackResponse;
     private String injectScript;
     private String sendScript;
     private String extractScript;
@@ -60,14 +61,20 @@ public class ChatGptBridge implements ChatBridge {
 
     @Override
     public void sendPrompt(String prompt, ResponseListener listener) {
-        startPrompt(prompt, listener, false);
+        startPrompt(prompt, listener, false, true);
+    }
+
+    @Override
+    public void sendRawPrompt(String prompt, ResponseListener listener) {
+        startPrompt(prompt, listener, false, false);
     }
 
     public void testInjectPrompt(String prompt, ResponseListener listener) {
-        startPrompt(prompt, listener, true);
+        startPrompt(prompt, listener, true, false);
     }
 
-    private void startPrompt(String prompt, ResponseListener listener, boolean injectOnly) {
+    private void startPrompt(String prompt, ResponseListener listener, boolean injectOnly,
+                             boolean trackResponse) {
         String text = prompt == null ? "" : prompt;
         long requestId = requestIds.next();
 
@@ -81,6 +88,7 @@ public class ChatGptBridge implements ChatBridge {
             activeListener = listener;
             activePrompt = text;
             this.injectOnly = injectOnly;
+            this.trackResponse = trackResponse;
             activeTimeout = scheduler.schedule(
                     () -> timeoutRequest(requestId),
                     SEND_OPERATION_TIMEOUT_MS,
@@ -161,6 +169,14 @@ public class ChatGptBridge implements ChatBridge {
         }
         if (listener != null) {
             listener.onPromptSubmitted(message.getRequestId());
+        }
+        if (!isTrackingResponse()) {
+            synchronized (lock) {
+                clearActiveLocked();
+            }
+            appState.transition(AppState.State.Ready);
+            callback.success("");
+            return;
         }
         try {
             appState.transition(AppState.State.WaitingForResponse);
@@ -263,6 +279,7 @@ public class ChatGptBridge implements ChatBridge {
         activeListener = null;
         activePrompt = null;
         injectOnly = false;
+        trackResponse = false;
     }
 
     private void cancelActiveTimeoutLocked() {
@@ -275,6 +292,12 @@ public class ChatGptBridge implements ChatBridge {
     private boolean isInjectOnly() {
         synchronized (lock) {
             return injectOnly;
+        }
+    }
+
+    private boolean isTrackingResponse() {
+        synchronized (lock) {
+            return trackResponse;
         }
     }
 
