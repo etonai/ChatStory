@@ -3,8 +3,11 @@ package com.chatstory;
 import com.chatstory.bridge.ChatGptBridge;
 import com.chatstory.bridge.CorrectionType;
 import com.chatstory.bridge.ResponseListener;
+import com.chatstory.canon.CanonFolderStore;
+import com.chatstory.browser.BrowserContextMenuHandler;
 import com.chatstory.browser.BrowserPanel;
 import com.chatstory.canon.CanonStore;
+import org.cef.CefClient;
 import com.chatstory.context.ContextFileStore;
 import com.chatstory.mode.AppMode;
 import com.chatstory.mode.AppModeModel;
@@ -31,7 +34,8 @@ public class AppFrame extends JFrame {
     private final NativeThemeApplier themeApplier = new NativeThemeApplier();
 
     public AppFrame(AppState appState, BrowserPanel browserPanel, CefBrowser browser,
-                    ChatGptBridge chatBridge, ContextFileStore contextFileStore) {
+                    ChatGptBridge chatBridge, CefClient client,
+                    ContextFileStore contextFileStore, CanonFolderStore canonFolderStore) {
         super("Story Workstation");
 
         setSize(1400, 900);
@@ -43,11 +47,13 @@ public class AppFrame extends JFrame {
         CanonStore canonStore = new CanonStore();
         leftPane = new LeftPanePanel(canonStore,
                 prompt -> chatBridge.sendPrompt(prompt, statusResponseListener("Correction sent")),
-                () -> browser.setFocus(false));
+                () -> browser.setFocus(false),
+                canonFolderStore);
+        client.addContextMenuHandler(new BrowserContextMenuHandler(leftPane::setResponse));
         ParsePreviewPanel parsePreviewPanel = new ParsePreviewPanel();
         JTabbedPane rightTabs = new JTabbedPane();
         rightTabs.addTab("MAIN", new JPanel(new BorderLayout()));
-        rightTabs.addTab("Configuration", new ConfigurationPanel(modeModel, themeModel, contextFileStore));
+        rightTabs.addTab("Configuration", new ConfigurationPanel(modeModel, themeModel, contextFileStore, canonFolderStore));
         rightTabs.addTab("Parsed Input", parsePreviewPanel);
         rightTabs.addTab("Context", new ContextPanel(contextFileStore));
 
@@ -67,15 +73,37 @@ public class AppFrame extends JFrame {
                 CorrectionType.REDO_PROMPT,
                 statusResponseListener("Redo sent")));
 
+        JButton endSceneBtn = new JButton("End Scene");
+        endSceneBtn.setToolTipText("End the current scene");
+        endSceneBtn.addActionListener(e -> chatBridge.sendPrompt(
+                CorrectionType.END_SCENE_PROMPT,
+                statusResponseListener("End scene sent")));
+
         JButton resetBtn = new JButton("Reset");
         resetBtn.setToolTipText("Force app state back to Ready");
         resetBtn.addActionListener(e -> chatBridge.reset());
+
+        JButton fetchBtn = new JButton("Fetch");
+        fetchBtn.setToolTipText("Force-read the current response from the browser");
+        fetchBtn.addActionListener(e -> {
+            chatBridge.reset();
+            chatBridge.fetchLatestResponse(text -> {
+                if (text != null && !text.isBlank()) {
+                    leftPane.setResponse(text);
+                    UiThread.run(() -> statusLabel.setText(" Response fetched"));
+                } else {
+                    UiThread.run(() -> statusLabel.setText(" No response found in browser"));
+                }
+            });
+        });
 
         JPanel leftTools = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         leftTools.add(devToolsBtn);
         leftTools.add(testInjectBtn);
         leftTools.add(redoBtn);
+        leftTools.add(endSceneBtn);
         leftTools.add(resetBtn);
+        leftTools.add(fetchBtn);
 
         JPanel toolbar = new JPanel(new BorderLayout(6, 0));
         toolbar.setBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));

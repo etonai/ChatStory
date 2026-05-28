@@ -5,6 +5,7 @@ import com.chatstory.browser.BrowserPanel;
 import com.chatstory.browser.DomBridge;
 import com.chatstory.bridge.ChatGptBridge;
 import com.chatstory.config.AppConfig;
+import com.chatstory.canon.CanonFolderStore;
 import com.chatstory.context.ContextFileStore;
 import me.friwi.jcefmaven.CefAppBuilder;
 import me.friwi.jcefmaven.impl.progress.ConsoleProgressHandler;
@@ -23,6 +24,7 @@ public class Main {
 
         ContextFileStore contextFileStore = new ContextFileStore(
                 config.getContextFileListPath(), config.getStagingFolderPath());
+        CanonFolderStore canonFolderStore = new CanonFolderStore(config.getCanonConfigPath());
 
         System.out.println("Story Workstation starting...");
         System.out.println("  Profile : " + config.getProfilePath());
@@ -64,6 +66,6 @@ public class Main {
         ChatGptBridge chatBridge = new ChatGptBridge(domBridge, browser, appState);
 
         SwingUtilities.invokeLater(() ->
-                new AppFrame(appState, browserPanel, browser, chatBridge, contextFileStore));
+                new AppFrame(appState, browserPanel, browser, chatBridge, client, contextFileStore, canonFolderStore));
     }
 }

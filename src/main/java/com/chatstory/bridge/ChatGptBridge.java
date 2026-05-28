@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public class ChatGptBridge implements ChatBridge {
 
@@ -46,6 +47,8 @@ public class ChatGptBridge implements ChatBridge {
     private String injectScript;
     private String sendScript;
     private String extractScript;
+    private String fetchScript;
+    private volatile Consumer<String> manualFetchCallback;
     private JsonObject selectors;
 
     public ChatGptBridge(DomBridge domBridge, CefBrowser browser, AppState appState) {
@@ -57,6 +60,7 @@ public class ChatGptBridge implements ChatBridge {
         domBridge.registerHandler("sendResult", this::handleSendResult);
         domBridge.registerHandler("responseComplete", this::handleResponseComplete);
         domBridge.registerHandler("error", this::handleErrorResult);
+        domBridge.registerHandler("manualFetch", this::handleManualFetch);
     }
 
     @Override
@@ -79,6 +83,23 @@ public class ChatGptBridge implements ChatBridge {
             clearActiveLocked();
         }
         appState.reset();
+    }
+
+    public void fetchLatestResponse(Consumer<String> onResult) {
+        manualFetchCallback = onResult;
+        JsonObject options = new JsonObject();
+        options.addProperty("requestId", 0L);
+        executeFunction("/js/fetch_response.js", "window.chatStoryFetchResponse", options);
+    }
+
+    private void handleManualFetch(BridgeMessage message, org.cef.callback.CefQueryCallback callback) {
+        Consumer<String> cb = manualFetchCallback;
+        manualFetchCallback = null;
+        callback.success("");
+        if (cb != null) {
+            String text = message.isOk() && message.getText() != null ? message.getText() : "";
+            cb.accept(text);
+        }
     }
 
     private void startPrompt(String prompt, ResponseListener listener, boolean injectOnly,
@@ -346,6 +367,10 @@ public class ChatGptBridge implements ChatBridge {
         if ("/js/extract_response.js".equals(resourcePath)) {
             if (extractScript == null) extractScript = loadResource(resourcePath);
             return extractScript;
+        }
+        if ("/js/fetch_response.js".equals(resourcePath)) {
+            if (fetchScript == null) fetchScript = loadResource(resourcePath);
+            return fetchScript;
         }
         return loadResource(resourcePath);
     }

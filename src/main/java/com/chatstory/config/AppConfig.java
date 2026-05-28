@@ -19,6 +19,7 @@ public final class AppConfig {
     private final String configFilePath;
     private final String contextFileListPath;
     private final String stagingFolderPath;
+    private final String canonConfigPath;
 
     public AppConfig() {
         String localAppData = System.getenv("LOCALAPPDATA");
@@ -40,6 +41,7 @@ public final class AppConfig {
 
         contextFileListPath = new File(appRoamDir, "context-files.json").getAbsolutePath();
         stagingFolderPath   = new File(appLocalDir, "context-staging").getAbsolutePath();
+        canonConfigPath     = new File(appRoamDir, "canon-config.json").getAbsolutePath();
 
         // Create application directories now so JCEF and config reads don't fail
         ensureDir(appLocalDir);
@@ -84,4 +86,5 @@ public final class AppConfig {
     public String getConfigFilePath()       { return configFilePath; }
     public String getContextFileListPath()  { return contextFileListPath; }
     public String getStagingFolderPath()    { return stagingFolderPath; }
+    public String getCanonConfigPath()      { return canonConfigPath; }
 }

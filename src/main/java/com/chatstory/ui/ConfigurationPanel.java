@@ -1,6 +1,7 @@
 package com.chatstory.ui;
 
 import com.chatstory.UiThread;
+import com.chatstory.canon.CanonFolderStore;
 import com.chatstory.context.ContextFileStore;
 import com.chatstory.mode.AppMode;
 import com.chatstory.mode.AppModeModel;
@@ -14,7 +15,7 @@ import java.nio.file.Path;
 public class ConfigurationPanel extends JPanel {
 
     public ConfigurationPanel(AppModeModel modeModel, NativeThemeModel themeModel,
-                              ContextFileStore contextFileStore) {
+                              ContextFileStore contextFileStore, CanonFolderStore canonFolderStore) {
         super(new GridBagLayout());
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -28,6 +29,9 @@ public class ConfigurationPanel extends JPanel {
         content.add(Box.createVerticalStrut(16));
         content.add(sectionLabel("Staging Folder"));
         content.add(stagingFolderControls(contextFileStore));
+        content.add(Box.createVerticalStrut(16));
+        content.add(sectionLabel("Canon Folder"));
+        content.add(canonFolderControls(canonFolderStore));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -102,6 +106,39 @@ public class ConfigurationPanel extends JPanel {
             contextFileStore.setStagingPath(selected);
             pathLabel.setText(shorten(selected.toString()));
             pathLabel.setToolTipText(selected.toString());
+        });
+
+        return verticalPanel(pathLabel, browseButton);
+    }
+
+    private JPanel canonFolderControls(CanonFolderStore canonFolderStore) {
+        String initial = canonFolderStore.getCanonFolder() != null
+                ? shorten(canonFolderStore.getCanonFolder().toString())
+                : "(not set)";
+        JLabel pathLabel = new JLabel(initial);
+        if (canonFolderStore.getCanonFolder() != null) {
+            pathLabel.setToolTipText(canonFolderStore.getCanonFolder().toString());
+        }
+        pathLabel.setFont(pathLabel.getFont().deriveFont(Font.PLAIN, 11f));
+        pathLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        canonFolderStore.addListener(() -> UiThread.run(() -> {
+            java.nio.file.Path p = canonFolderStore.getCanonFolder();
+            pathLabel.setText(p != null ? shorten(p.toString()) : "(not set)");
+            pathLabel.setToolTipText(p != null ? p.toString() : null);
+        }));
+
+        JButton browseButton = new JButton("Browse...");
+        browseButton.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Select Canon Folder");
+            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            if (canonFolderStore.getCanonFolder() != null) {
+                chooser.setCurrentDirectory(canonFolderStore.getCanonFolder().toFile());
+            }
+            if (chooser.showOpenDialog(ConfigurationPanel.this) != JFileChooser.APPROVE_OPTION) return;
+            java.nio.file.Path selected = chooser.getSelectedFile().toPath().toAbsolutePath();
+            canonFolderStore.setCanonFolder(selected);
         });
 
         return verticalPanel(pathLabel, browseButton);

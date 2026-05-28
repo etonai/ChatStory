@@ -135,8 +135,7 @@ public class ContextPanel extends JPanel {
         });
 
         checklistPanel.add(cb);
-        checklistPanel.revalidate();
-        checklistPanel.repaint();
+        sortChecklist();
         updateStageButton();
     }
 
@@ -212,6 +211,21 @@ public class ContextPanel extends JPanel {
         if (splitPane.getDividerLocation() >= splitPane.getHeight() - splitPane.getDividerSize() - 10) {
             splitPane.setDividerLocation(0.55);
         }
+    }
+
+    private void sortChecklist() {
+        Component[] components = checklistPanel.getComponents();
+        java.util.Arrays.sort(components, (a, b) -> {
+            if (!(a instanceof JCheckBox ca) || !(b instanceof JCheckBox cb)) return 0;
+            Path pa = (Path) ca.getClientProperty("filePath");
+            Path pb = (Path) cb.getClientProperty("filePath");
+            return pa.getFileName().toString()
+                    .compareToIgnoreCase(pb.getFileName().toString());
+        });
+        checklistPanel.removeAll();
+        for (Component c : components) checklistPanel.add(c);
+        checklistPanel.revalidate();
+        checklistPanel.repaint();
     }
 
     private void selectAllOrNone() {

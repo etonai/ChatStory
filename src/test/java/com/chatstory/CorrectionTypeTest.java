@@ -10,28 +10,28 @@ class CorrectionTypeTest {
     @Test
     void contextLeakagePrefixPlusText() {
         assertEquals(
-                "Do not rewrite the beat, but there is a context leakage problem with: some text",
+                "SCENE_INPUT_SEQUENCE:\n1. DIRECTION: \"Do not rewrite the beat, but there is a context leakage problem with: some text\"",
                 CorrectionType.CONTEXT_LEAKAGE.buildPrompt("some text"));
     }
 
     @Test
     void badWritingPrefixPlusText() {
         assertEquals(
-                "Do not rewrite the beat, but this is bad writing: some text",
+                "SCENE_INPUT_SEQUENCE:\n1. DIRECTION: \"Do not rewrite the beat, but this is bad writing: some text\"",
                 CorrectionType.BAD_WRITING.buildPrompt("some text"));
     }
 
     @Test
     void reEvaluatePrefixPlusText() {
         assertEquals(
-                "Do not rewrite the beat, but re-evaluate this text you generated: some text",
+                "SCENE_INPUT_SEQUENCE:\n1. DIRECTION: \"Do not rewrite the beat, but re-evaluate this text you generated: some text\"",
                 CorrectionType.RE_EVALUATE.buildPrompt("some text"));
     }
 
     @Test
     void emptySelectedTextProducesPrefixOnly() {
         assertEquals(
-                "Do not rewrite the beat, but this is bad writing: ",
+                "SCENE_INPUT_SEQUENCE:\n1. DIRECTION: \"Do not rewrite the beat, but this is bad writing: \"",
                 CorrectionType.BAD_WRITING.buildPrompt(""));
     }
 
@@ -42,14 +42,31 @@ class CorrectionTypeTest {
     }
 
     @Test
+    void continuityErrorPrefixPlusText() {
+        assertEquals(
+                "SCENE_INPUT_SEQUENCE:\n1. DIRECTION: \"Do not rewrite the beat, but there is a continuity error with: some text\"",
+                CorrectionType.CONTINUITY_ERROR.buildPrompt("some text"));
+    }
+
+    @Test
     void menuLabels() {
         assertEquals("Context Leakage", CorrectionType.CONTEXT_LEAKAGE.menuLabel());
         assertEquals("Bad Writing", CorrectionType.BAD_WRITING.menuLabel());
         assertEquals("Re-evaluate", CorrectionType.RE_EVALUATE.menuLabel());
+        assertEquals("Continuity Error", CorrectionType.CONTINUITY_ERROR.menuLabel());
     }
 
     @Test
-    void redoPromptConstant() {
-        assertEquals("Please redo the last story beat", CorrectionType.REDO_PROMPT);
+    void redoPromptIsFormattedDirection() {
+        assertEquals(
+                "SCENE_INPUT_SEQUENCE:\n1. DIRECTION: \"Redo the last story beat\"",
+                CorrectionType.REDO_PROMPT);
+    }
+
+    @Test
+    void endScenePromptIsFormattedDirection() {
+        assertEquals(
+                "SCENE_INPUT_SEQUENCE:\n1. DIRECTION: \"End the scene\"",
+                CorrectionType.END_SCENE_PROMPT);
     }
 }

@@ -1,5 +1,6 @@
 package com.chatstory.ui;
 
+import com.chatstory.canon.CanonFolderStore;
 import com.chatstory.canon.CanonStore;
 
 import javax.swing.*;
@@ -11,6 +12,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
@@ -19,9 +22,12 @@ public class CanonPanel extends JPanel {
     private final JTextArea textArea = new JTextArea();
     private final JButton saveButton = new JButton("Save");
     private final JButton clearButton = new JButton("Clear");
+    private final CanonFolderStore canonFolderStore;
 
-    public CanonPanel(CanonStore canonStore, Runnable beforeFocusRequest) {
+    public CanonPanel(CanonStore canonStore, Runnable beforeFocusRequest,
+                      CanonFolderStore canonFolderStore) {
         super(new BorderLayout(6, 6));
+        this.canonFolderStore = canonFolderStore;
         setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
 
         textArea.setEditable(true);
@@ -80,6 +86,30 @@ public class CanonPanel extends JPanel {
         String updated = current.isBlank() ? text : current + "\n\n---\n\n" + text;
         textArea.setText(updated);
         textArea.setCaretPosition(0);
+        autoSaveTemp(updated);
+    }
+
+    private void autoSaveTemp(String content) {
+        Path tempFile = canonFolderStore.getTempFile();
+        if (tempFile == null) return;
+        Thread.ofVirtual().start(() -> {
+            try {
+                Files.createDirectories(tempFile.getParent());
+                Files.writeString(tempFile, content, StandardCharsets.UTF_8);
+            } catch (IOException ex) {
+                System.err.println("[CanonPanel] Auto-save failed: " + ex.getMessage());
+            }
+        });
+    }
+
+    private void wipeTemp() {
+        Path tempFile = canonFolderStore.getTempFile();
+        if (tempFile == null) return;
+        try {
+            Files.deleteIfExists(tempFile);
+        } catch (IOException ex) {
+            System.err.println("[CanonPanel] Failed to wipe temp file: " + ex.getMessage());
+        }
     }
 
     private void saveToFile() {
@@ -97,6 +127,7 @@ public class CanonPanel extends JPanel {
 
         try {
             Files.writeString(file.toPath(), textArea.getText(), StandardCharsets.UTF_8);
+            wipeTemp();
             saveButton.setText("Saved!");
             Timer revert = new Timer(1200, ev -> saveButton.setText("Save"));
             revert.setRepeats(false);

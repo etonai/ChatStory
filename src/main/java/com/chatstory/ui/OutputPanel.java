@@ -20,11 +20,12 @@ public class OutputPanel extends JPanel {
     private final JTextArea textArea = new JTextArea();
     private final JButton addToCanonButton = new JButton("Add to Canon");
 
-    public OutputPanel(CanonStore canonStore, Consumer<String> onCanonAdded, Consumer<String> onSendPrompt) {
+    public OutputPanel(CanonStore canonStore, Consumer<String> onCanonAdded,
+                       Consumer<String> onSendPrompt, Runnable beforeFocusRequest) {
         super(new BorderLayout(6, 6));
         setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
 
-        textArea.setEditable(false);
+        textArea.setEditable(true);
         textArea.setLineWrap(true);
         textArea.setWrapStyleWord(true);
 
@@ -40,14 +41,20 @@ public class OutputPanel extends JPanel {
             canonStore.add(text);
             onCanonAdded.accept(text);
             addToCanonButton.setText("Added!");
-            Timer revert = new Timer(1000, ev -> addToCanonButton.setText("Add to Canon"));
-            revert.setRepeats(false);
-            revert.start();
+            addToCanonButton.setEnabled(false);
+        });
+
+        JButton clearButton = new JButton("Clear");
+        clearButton.addActionListener(e -> {
+            textArea.setText("");
+            addToCanonButton.setText("Add to Canon");
+            addToCanonButton.setEnabled(true);
         });
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
         buttonPanel.setOpaque(false);
         buttonPanel.add(addToCanonButton);
+        buttonPanel.add(clearButton);
         buttonPanel.add(copyButton);
 
         JPanel header = new JPanel(new BorderLayout());
@@ -55,9 +62,30 @@ public class OutputPanel extends JPanel {
         header.add(buttonPanel, BorderLayout.EAST);
 
         add(header, BorderLayout.NORTH);
-        add(new JScrollPane(textArea), BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        add(scrollPane, BorderLayout.CENTER);
 
         installCorrectionMenu(onSendPrompt);
+        installFocusRecovery(scrollPane, beforeFocusRequest);
+    }
+
+    private void installFocusRecovery(JScrollPane scrollPane, Runnable beforeFocusRequest) {
+        MouseAdapter focusRecovery = new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (!e.isPopupTrigger()) {
+                    beforeFocusRequest.run();
+                    textArea.requestFocusInWindow();
+                    SwingUtilities.invokeLater(() -> {
+                        KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+                        textArea.requestFocusInWindow();
+                    });
+                }
+            }
+        };
+        textArea.addMouseListener(focusRecovery);
+        scrollPane.addMouseListener(focusRecovery);
+        scrollPane.getViewport().addMouseListener(focusRecovery);
     }
 
     private void installCorrectionMenu(Consumer<String> onSendPrompt) {
@@ -101,7 +129,9 @@ public class OutputPanel extends JPanel {
         UiThread.run(() -> {
             textArea.setText(text == null ? "" : text);
             textArea.setCaretPosition(0);
-            addToCanonButton.setEnabled(text != null && !text.isBlank());
+            boolean hasContent = text != null && !text.isBlank();
+            addToCanonButton.setEnabled(hasContent);
+            if (hasContent) addToCanonButton.setText("Add to Canon");
         });
     }
 
