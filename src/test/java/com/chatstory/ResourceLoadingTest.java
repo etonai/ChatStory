@@ -23,6 +23,20 @@ class ResourceLoadingTest {
     }
 
     @Test
+    void injectPromptJsLoadsAsNonEmptyString() throws IOException {
+        String content = loadResource("/js/inject_prompt.js");
+        assertNotNull(content);
+        assertFalse(content.isBlank(), "inject_prompt.js should not be empty");
+    }
+
+    @Test
+    void triggerSendJsLoadsAsNonEmptyString() throws IOException {
+        String content = loadResource("/js/trigger_send.js");
+        assertNotNull(content);
+        assertFalse(content.isBlank(), "trigger_send.js should not be empty");
+    }
+
+    @Test
     void chatgptSelectorsJsonLoadsAsNonEmptyString() throws IOException {
         String content = loadResource("/js/chatgpt_selectors.json");
         assertNotNull(content);
@@ -32,7 +46,7 @@ class ResourceLoadingTest {
     @Test
     void selectorsJsonContainsAllExpectedKeys() throws IOException {
         JsonObject obj = loadJson("/js/chatgpt_selectors.json");
-        List<String> required = List.of("promptEditor", "sendButton", "stopButton", "assistantMsg");
+        List<String> required = List.of("promptEditor", "sendButton", "stopButton", "assistantMsg", "userMsg");
         for (String key : required) {
             assertTrue(obj.has(key), "Missing key: " + key);
         }
@@ -41,7 +55,7 @@ class ResourceLoadingTest {
     @Test
     void selectorsJsonEachKeyIsNonEmptyStringArray() throws IOException {
         JsonObject obj = loadJson("/js/chatgpt_selectors.json");
-        for (String key : List.of("promptEditor", "sendButton", "stopButton", "assistantMsg")) {
+        for (String key : List.of("promptEditor", "sendButton", "stopButton", "assistantMsg", "userMsg")) {
             JsonElement el = obj.get(key);
             assertTrue(el.isJsonArray(), key + " should be a JSON array");
             JsonArray arr = el.getAsJsonArray();

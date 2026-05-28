@@ -3,6 +3,7 @@ package com.chatstory;
 import com.chatstory.browser.BrowserClient;
 import com.chatstory.browser.BrowserPanel;
 import com.chatstory.browser.DomBridge;
+import com.chatstory.bridge.ChatGptBridge;
 import com.chatstory.config.AppConfig;
 import me.friwi.jcefmaven.CefAppBuilder;
 import me.friwi.jcefmaven.impl.progress.ConsoleProgressHandler;
@@ -54,8 +55,9 @@ public class Main {
 
         CefBrowser   browser     = client.createBrowser(config.getTargetUrl(), false, false);
         BrowserPanel browserPanel = new BrowserPanel(browser);
+        ChatGptBridge chatBridge = new ChatGptBridge(domBridge, browser, appState);
 
         SwingUtilities.invokeLater(() ->
-                new AppFrame(appState, browserPanel, browser));
+                new AppFrame(appState, browserPanel, browser, chatBridge));
     }
 }

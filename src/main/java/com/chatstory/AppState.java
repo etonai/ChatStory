@@ -108,8 +108,12 @@ public class AppState {
     private boolean isValidDirectTransition(State from, State to) {
         switch (from) {
             case Ready:              return to == State.InjectingPrompt;
-            case InjectingPrompt:    return to == State.Sending || to == State.Error;
-            case Sending:            return to == State.WaitingForResponse;
+            case InjectingPrompt:    return to == State.Sending
+                    || to == State.Ready
+                    || to == State.Error;
+            case Sending:            return to == State.WaitingForResponse
+                    || to == State.Ready
+                    || to == State.Error;
             case WaitingForResponse: return to == State.Complete || to == State.Error;
             case Complete:           return to == State.Ready;
             case Error:              return to == State.Ready;

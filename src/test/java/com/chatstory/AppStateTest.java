@@ -104,6 +104,14 @@ class AppStateTest {
     }
 
     @Test
+    void injectingPromptToReadyForTestInjection() {
+        toReady();
+        state.transition(AppState.State.InjectingPrompt);
+        state.transition(AppState.State.Ready);
+        assertEquals(AppState.State.Ready, state.current());
+    }
+
+    @Test
     void injectingPromptToError() {
         toReady();
         state.transition(AppState.State.InjectingPrompt);
@@ -118,6 +126,24 @@ class AppStateTest {
         state.transition(AppState.State.Sending);
         state.transition(AppState.State.WaitingForResponse);
         assertEquals(AppState.State.WaitingForResponse, state.current());
+    }
+
+    @Test
+    void sendingToReadyForDc3PromptSubmission() {
+        toReady();
+        state.transition(AppState.State.InjectingPrompt);
+        state.transition(AppState.State.Sending);
+        state.transition(AppState.State.Ready);
+        assertEquals(AppState.State.Ready, state.current());
+    }
+
+    @Test
+    void sendingToError() {
+        toReady();
+        state.transition(AppState.State.InjectingPrompt);
+        state.transition(AppState.State.Sending);
+        state.transition(AppState.State.Error);
+        assertEquals(AppState.State.Error, state.current());
     }
 
     @Test
