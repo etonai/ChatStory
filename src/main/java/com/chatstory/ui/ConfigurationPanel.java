@@ -1,6 +1,7 @@
 package com.chatstory.ui;
 
 import com.chatstory.UiThread;
+import com.chatstory.context.ContextFileStore;
 import com.chatstory.mode.AppMode;
 import com.chatstory.mode.AppModeModel;
 import com.chatstory.theme.NativeTheme;
@@ -8,10 +9,12 @@ import com.chatstory.theme.NativeThemeModel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.nio.file.Path;
 
 public class ConfigurationPanel extends JPanel {
 
-    public ConfigurationPanel(AppModeModel modeModel, NativeThemeModel themeModel) {
+    public ConfigurationPanel(AppModeModel modeModel, NativeThemeModel themeModel,
+                              ContextFileStore contextFileStore) {
         super(new GridBagLayout());
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -22,6 +25,9 @@ public class ConfigurationPanel extends JPanel {
         content.add(Box.createVerticalStrut(16));
         content.add(sectionLabel("Theme"));
         content.add(themeControls(themeModel));
+        content.add(Box.createVerticalStrut(16));
+        content.add(sectionLabel("Staging Folder"));
+        content.add(stagingFolderControls(contextFileStore));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -75,6 +81,35 @@ public class ConfigurationPanel extends JPanel {
         }));
 
         return verticalPanel(dark, light);
+    }
+
+    private JPanel stagingFolderControls(ContextFileStore contextFileStore) {
+        JLabel pathLabel = new JLabel(shorten(contextFileStore.getStagingPath().toString()));
+        pathLabel.setToolTipText(contextFileStore.getStagingPath().toString());
+        pathLabel.setFont(pathLabel.getFont().deriveFont(Font.PLAIN, 11f));
+        pathLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JButton browseButton = new JButton("Browse...");
+        browseButton.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Select Staging Folder");
+            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            chooser.setCurrentDirectory(contextFileStore.getStagingPath().toFile());
+
+            if (chooser.showOpenDialog(ConfigurationPanel.this) != JFileChooser.APPROVE_OPTION) return;
+
+            Path selected = chooser.getSelectedFile().toPath().toAbsolutePath();
+            contextFileStore.setStagingPath(selected);
+            pathLabel.setText(shorten(selected.toString()));
+            pathLabel.setToolTipText(selected.toString());
+        });
+
+        return verticalPanel(pathLabel, browseButton);
+    }
+
+    private static String shorten(String path) {
+        if (path.length() <= 50) return path;
+        return "…" + path.substring(path.length() - 47);
     }
 
     private JPanel verticalPanel(JComponent... components) {

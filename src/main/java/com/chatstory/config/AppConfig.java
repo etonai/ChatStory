@@ -17,6 +17,8 @@ public final class AppConfig {
     private final String targetUrl;
     private final String profilePath;
     private final String configFilePath;
+    private final String contextFileListPath;
+    private final String stagingFolderPath;
 
     public AppConfig() {
         String localAppData = System.getenv("LOCALAPPDATA");
@@ -35,6 +37,9 @@ public final class AppConfig {
         File appRoamDir   = new File(configBase, APP_NAME);
         File configFile   = new File(appRoamDir, "config.properties");
         configFilePath = configFile.getAbsolutePath();
+
+        contextFileListPath = new File(appRoamDir, "context-files.json").getAbsolutePath();
+        stagingFolderPath   = new File(appLocalDir, "context-staging").getAbsolutePath();
 
         // Create application directories now so JCEF and config reads don't fail
         ensureDir(appLocalDir);
@@ -74,7 +79,9 @@ public final class AppConfig {
         }
     }
 
-    public String getTargetUrl()      { return targetUrl; }
-    public String getProfilePath()    { return profilePath; }
-    public String getConfigFilePath() { return configFilePath; }
+    public String getTargetUrl()            { return targetUrl; }
+    public String getProfilePath()          { return profilePath; }
+    public String getConfigFilePath()       { return configFilePath; }
+    public String getContextFileListPath()  { return contextFileListPath; }
+    public String getStagingFolderPath()    { return stagingFolderPath; }
 }

@@ -4,11 +4,13 @@ import com.chatstory.bridge.ChatGptBridge;
 import com.chatstory.bridge.ResponseListener;
 import com.chatstory.browser.BrowserPanel;
 import com.chatstory.canon.CanonStore;
+import com.chatstory.context.ContextFileStore;
 import com.chatstory.mode.AppMode;
 import com.chatstory.mode.AppModeModel;
 import com.chatstory.theme.NativeThemeApplier;
 import com.chatstory.theme.NativeThemeModel;
 import com.chatstory.ui.ConfigurationPanel;
+import com.chatstory.ui.ContextPanel;
 import com.chatstory.ui.InputPanel;
 import com.chatstory.ui.LeftPanePanel;
 import com.chatstory.ui.ParsePreviewPanel;
@@ -28,7 +30,7 @@ public class AppFrame extends JFrame {
     private final NativeThemeApplier themeApplier = new NativeThemeApplier();
 
     public AppFrame(AppState appState, BrowserPanel browserPanel, CefBrowser browser,
-                    ChatGptBridge chatBridge) {
+                    ChatGptBridge chatBridge, ContextFileStore contextFileStore) {
         super("Story Workstation");
 
         setSize(1400, 900);
@@ -42,8 +44,9 @@ public class AppFrame extends JFrame {
         ParsePreviewPanel parsePreviewPanel = new ParsePreviewPanel();
         JTabbedPane rightTabs = new JTabbedPane();
         rightTabs.addTab("MAIN", new JPanel(new BorderLayout()));
-        rightTabs.addTab("Configuration", new ConfigurationPanel(modeModel, themeModel));
+        rightTabs.addTab("Configuration", new ConfigurationPanel(modeModel, themeModel, contextFileStore));
         rightTabs.addTab("Parsed Input", parsePreviewPanel);
+        rightTabs.addTab("Context", new ContextPanel(contextFileStore));
 
         JButton devToolsBtn = new JButton("DevTools");
         devToolsBtn.setToolTipText("Open Chromium DevTools for this page");

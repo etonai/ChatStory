@@ -5,6 +5,7 @@ import com.chatstory.browser.BrowserPanel;
 import com.chatstory.browser.DomBridge;
 import com.chatstory.bridge.ChatGptBridge;
 import com.chatstory.config.AppConfig;
+import com.chatstory.context.ContextFileStore;
 import me.friwi.jcefmaven.CefAppBuilder;
 import me.friwi.jcefmaven.impl.progress.ConsoleProgressHandler;
 import org.cef.CefApp;
@@ -20,10 +21,15 @@ public class Main {
         AppConfig config = new AppConfig();
         AppState  appState = new AppState();
 
+        ContextFileStore contextFileStore = new ContextFileStore(
+                config.getContextFileListPath(), config.getStagingFolderPath());
+
         System.out.println("Story Workstation starting...");
         System.out.println("  Profile : " + config.getProfilePath());
         System.out.println("  Config  : " + config.getConfigFilePath());
         System.out.println("  Target  : " + config.getTargetUrl());
+        System.out.println("  Context : " + config.getContextFileListPath());
+        System.out.println("  Staging : " + config.getStagingFolderPath());
 
         // Build JCEF — preserving the exact init order proven in DC001
         CefAppBuilder builder = new CefAppBuilder();
@@ -58,6 +64,6 @@ public class Main {
         ChatGptBridge chatBridge = new ChatGptBridge(domBridge, browser, appState);
 
         SwingUtilities.invokeLater(() ->
-                new AppFrame(appState, browserPanel, browser, chatBridge));
+                new AppFrame(appState, browserPanel, browser, chatBridge, contextFileStore));
     }
 }
