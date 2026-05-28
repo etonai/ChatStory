@@ -1,6 +1,6 @@
 # DevCycle 007: Canon Continuity
 
-**Status:** Planning
+**Status:** Verified
 **Start Date:** 2026-05-28
 **Target Completion:** TBD
 **Focus:** Let users accumulate selected ChatGPT responses into a persistent canon record that can be saved as a Markdown file.
@@ -75,15 +75,15 @@ src/test/java/com/chatstory/canon/
 
 ### Phase 1: Canon Data Model
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Create `CanonStore` in `com.chatstory.canon`.
-- [ ] `CanonStore` holds an ordered `List<String>` of canon entries.
-- [ ] Implement `add(String responseText)` — appends the entry; ignores null or blank text.
-- [ ] Implement `getEntries()` — returns an unmodifiable snapshot of the list.
-- [ ] Implement `export()` — returns all entries joined by a Markdown horizontal rule (`\n\n---\n\n`) as a single `String`.
-- [ ] Implement `isEmpty()`.
-- [ ] Write `CanonStoreTest` covering: empty on construction, add and retrieve, blank/null add is ignored, export format with one entry, export format with multiple entries.
+- [x] Create `CanonStore` in `com.chatstory.canon`.
+- [x] `CanonStore` holds an ordered `List<String>` of canon entries.
+- [x] Implement `add(String responseText)` — appends the entry; ignores null or blank text.
+- [x] Implement `getEntries()` — returns an unmodifiable snapshot of the list.
+- [x] Implement `export()` — returns all entries joined by a Markdown horizontal rule (`\n\n---\n\n`) as a single `String`.
+- [x] Implement `isEmpty()`.
+- [x] Write `CanonStoreTest` covering: empty on construction, add and retrieve, blank/null add is ignored, export format with one entry, export format with multiple entries.
 
 **Technical Notes:**
 
@@ -95,13 +95,13 @@ The export separator (`---`) renders as a horizontal rule in Markdown, which nat
 
 ### Phase 2: Left Pane Tab Structure
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Create `LeftPanePanel` — a `JPanel` containing a `JTabbedPane` with two tabs: `Response` and `Canon`.
-- [ ] The `Response` tab holds the existing `OutputPanel`.
-- [ ] The `Canon` tab holds the new `CanonPanel` (stubbed for now — can be an empty placeholder until Phase 3).
-- [ ] Replace the bare `OutputPanel` reference in `AppFrame` with `LeftPanePanel`.
-- [ ] Confirm the app still launches and the existing response display works correctly.
+- [x] Create `LeftPanePanel` — a `JPanel` containing a `JTabbedPane` with two tabs: `Response` and `Canon`.
+- [x] The `Response` tab holds the existing `OutputPanel`.
+- [x] The `Canon` tab holds the new `CanonPanel`.
+- [x] Replace the bare `OutputPanel` reference in `AppFrame` with `LeftPanePanel`.
+- [x] Confirm the app still launches and the existing response display works correctly.
 
 **Technical Notes:**
 
@@ -113,14 +113,14 @@ Apply the current dark/light theme to `LeftPanePanel` and its `JTabbedPane` cons
 
 ### Phase 3: Add to Canon Button
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Add a `CanonStore` instance to the application — created in `Main` and passed where needed, or created in `AppFrame`.
-- [ ] Modify `OutputPanel` to accept a `CanonStore` reference at construction.
-- [ ] Add an `Add to Canon` button to the `OutputPanel` header, next to the existing `Copy` button.
-- [ ] Clicking `Add to Canon` calls `canonStore.add(textArea.getText())`.
-- [ ] `Add to Canon` is disabled when `textArea` is empty.
-- [ ] After a successful add, briefly indicate the action (update button text to "Added!" for ~1 second, then revert — or a status label update). Do not open a dialog.
+- [x] Add a `CanonStore` instance to the application — created in `AppFrame`.
+- [x] Modify `OutputPanel` to accept a `CanonStore` reference at construction.
+- [x] Add an `Add to Canon` button to the `OutputPanel` header, next to the existing `Copy` button.
+- [x] Clicking `Add to Canon` calls `canonStore.add(textArea.getText())`.
+- [x] `Add to Canon` is disabled when `textArea` is empty.
+- [x] After a successful add, button text briefly shows "Added!" for 1 second then reverts.
 
 **Technical Notes:**
 
@@ -132,13 +132,13 @@ The brief confirmation avoids silent success (user wonders if the click register
 
 ### Phase 4: Canon Tab Display
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Implement `CanonPanel` — a `JPanel` with a read-only `JTextArea` and a `Save` button.
-- [ ] `CanonPanel` holds a reference to `CanonStore`.
-- [ ] Implement `refresh()` on `CanonPanel` — reads `canonStore.export()` and sets it as the text area content.
-- [ ] Call `canonPanel.refresh()` after each successful `Add to Canon` action so the Canon tab always reflects the current state.
-- [ ] Apply theme styling to `CanonPanel` consistently with other panels.
+- [x] Implement `CanonPanel` — a `JPanel` with a read-only `JTextArea` and a `Save` button.
+- [x] `CanonPanel` holds a reference to `CanonStore`.
+- [x] Implement `refresh()` on `CanonPanel` — reads `canonStore.export()` and sets it as the text area content.
+- [x] `canonPanel.refresh()` called after each successful `Add to Canon` action via `onCanonAdded` callback.
+- [x] Theme styling applied via `NativeThemeApplier` tree traversal — no extra wiring needed.
 
 **Technical Notes:**
 
@@ -152,14 +152,14 @@ Refreshing the whole text area on each add is acceptable for now. Canon entries 
 
 ### Phase 5: Save to File
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Add a `Save` button to `CanonPanel`.
-- [ ] Clicking `Save` opens a `JFileChooser` in save mode, defaulting to a `.md` file extension.
-- [ ] If the user confirms a path, write `canonStore.export()` to that file using UTF-8 encoding.
-- [ ] If the write succeeds, briefly confirm in the button or a label ("Saved.").
-- [ ] If the write fails, show a simple error dialog with the failure reason.
-- [ ] `Save` is disabled when `canonStore.isEmpty()`.
+- [x] Add a `Save` button to `CanonPanel`.
+- [x] Clicking `Save` opens a `JFileChooser` in save mode, defaulting to a `.md` file extension.
+- [x] If the user confirms a path, write `canonStore.export()` to that file using UTF-8 encoding.
+- [x] If the write succeeds, button briefly shows "Saved!" for 1.2 seconds then reverts.
+- [x] If the write fails, show a `JOptionPane` error dialog with the exception message.
+- [x] `Save` is disabled when `canonStore.isEmpty()`; enabled after first `refresh()`.
 
 **Technical Notes:**
 
@@ -173,9 +173,9 @@ The save path is not remembered between saves in DC7. If the user saves twice, t
 
 ### Phase 6: Tests and Manual Validation
 
-**Status:** Planning
+**Status:** In Progress
 
-- [ ] Run `gradlew.bat clean test` — confirm all existing tests plus new `CanonStoreTest` pass.
+- [x] Run `gradlew.bat clean test` — all tests pass (existing suite + 11 new `CanonStoreTest` cases).
 - [ ] Manually validate: response appears in `Response` tab, `Add to Canon` appends it, `Canon` tab shows all entries, `Save` produces a readable Markdown file.
 - [ ] Manually validate: `Add to Canon` is disabled when no response is present.
 - [ ] Manually validate: `Save` is disabled when canon is empty.

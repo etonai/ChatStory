@@ -3,13 +3,14 @@ package com.chatstory;
 import com.chatstory.bridge.ChatGptBridge;
 import com.chatstory.bridge.ResponseListener;
 import com.chatstory.browser.BrowserPanel;
+import com.chatstory.canon.CanonStore;
 import com.chatstory.mode.AppMode;
 import com.chatstory.mode.AppModeModel;
 import com.chatstory.theme.NativeThemeApplier;
 import com.chatstory.theme.NativeThemeModel;
 import com.chatstory.ui.ConfigurationPanel;
 import com.chatstory.ui.InputPanel;
-import com.chatstory.ui.OutputPanel;
+import com.chatstory.ui.LeftPanePanel;
 import com.chatstory.ui.ParsePreviewPanel;
 import org.cef.browser.CefBrowser;
 
@@ -21,7 +22,7 @@ import java.awt.event.WindowEvent;
 public class AppFrame extends JFrame {
 
     private final JLabel statusLabel;
-    private final OutputPanel outputPanel;
+    private final LeftPanePanel leftPane;
     private final AppModeModel modeModel = new AppModeModel();
     private final NativeThemeModel themeModel = new NativeThemeModel();
     private final NativeThemeApplier themeApplier = new NativeThemeApplier();
@@ -36,7 +37,8 @@ public class AppFrame extends JFrame {
 
         statusLabel = new JLabel(" Starting...");
         statusLabel.setForeground(Color.DARK_GRAY);
-        outputPanel = new OutputPanel();
+        CanonStore canonStore = new CanonStore();
+        leftPane = new LeftPanePanel(canonStore);
         ParsePreviewPanel parsePreviewPanel = new ParsePreviewPanel();
         JTabbedPane rightTabs = new JTabbedPane();
         rightTabs.addTab("MAIN", new JPanel(new BorderLayout()));
@@ -70,7 +72,7 @@ public class AppFrame extends JFrame {
 
         JSplitPane mainSplit = new JSplitPane(
                 JSplitPane.HORIZONTAL_SPLIT,
-                outputPanel,
+                leftPane,
                 browserAndRight);
         mainSplit.setResizeWeight(0.22);
 
@@ -122,7 +124,7 @@ public class AppFrame extends JFrame {
             public void onPromptSubmitted(long requestId) {
                 UiThread.run(() -> {
                     if (modeModel.current() == AppMode.STORY) {
-                        outputPanel.clear();
+                        leftPane.clearResponse();
                     }
                     statusLabel.setText(" " + successText);
                 });
@@ -130,12 +132,12 @@ public class AppFrame extends JFrame {
 
             @Override
             public void onResponsePartial(long requestId, String responseText) {
-                outputPanel.setResponse(responseText);
+                leftPane.setResponse(responseText);
             }
 
             @Override
             public void onResponseComplete(long requestId, String responseText) {
-                outputPanel.setResponse(responseText);
+                leftPane.setResponse(responseText);
                 UiThread.run(() -> statusLabel.setText(" Response complete"));
             }
 
