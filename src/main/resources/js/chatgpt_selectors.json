@@ -1,0 +1,17 @@
+{
+    "promptEditor": [
+        "[contenteditable='true'][data-id]",
+        "div[contenteditable='true']"
+    ],
+    "sendButton": [
+        "button[data-testid='send-button']",
+        "button[aria-label='Send message']"
+    ],
+    "stopButton": [
+        "button[aria-label='Stop generating']",
+        "[data-testid='stop-button']"
+    ],
+    "assistantMsg": [
+        "[data-message-author-role='assistant']"
+    ]
+}

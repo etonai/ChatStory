@@ -1,6 +1,6 @@
 # DevCycle 002: Application Foundation
 
-**Status:** Planning
+**Status:** Work Complete
 **Start Date:** 2026-05-28
 **Target Completion:** 2026-06-18
 **Focus:** Replace the DC001 spike with a clean, extensible application scaffold while preserving all DC001 behavior.
@@ -270,18 +270,31 @@ Do not rearrange this sequence. The DC001 spike proved it works; changing the or
 
 *Fill in when DC002 closes. Move this document to `doc/planning/completed/` afterward.*
 
-**Completion Date:** —
-**Phases Completed:** —
-**Work Deferred:** —
+**Completion Date:** 2026-05-28
+**Phases Completed:** All (Phase 1, Phase 2, Phase 3)
+**Work Deferred:** None
 
 **Accomplishments:**
--
+- Full application scaffold in place: `com.chatstory`, `browser/`, `bridge/`, `config/` packages
+- `AppState` state machine with tolerant browser-event methods and full DC003/DC004 state enum
+- `DomBridge` owns `CefMessageRouter`; handler dispatch with structured error codes
+- `BridgeMessage` parses JSON envelope; `ok` default rule handles error-type messages correctly
+- `ErrorCodes` full vocabulary defined for all DevCycles
+- `AppConfig` resolves Windows paths, creates directories, graceful fallback on missing config
+- `ChatBridge` and `ResponseListener` interfaces defined for DC003
+- `ping.js` and `chatgpt_selectors.json` loaded from classpath resources
+- `gradle.properties` pins Gradle daemon to JDK 21 (fixes Gradle 8.13 / JDK 24 compatibility issue)
+- 45 unit tests passing across `AppStateTest`, `BridgeMessageTest`, `ResourceLoadingTest`
+- `com.chatstory.spike` deleted; application still launches correctly after deletion
+- Session persists and `[Bridge] ping received requestId=0` confirmed on run
 
 **Metrics:**
-- Files created: —
-- Files deleted: —
-- Tests written: —
-- Tests passing: —
+- Files created: 18
+- Files deleted: 1 (spike package)
+- Tests written: 45
+- Tests passing: 45
 
 **Lessons / Notes:**
-*Surprises, decisions made, things that worked well or didn't — especially anything that should inform DC003 planning.*
+- Gradle 8.13 running on JDK 24 fails to create the test task (`Type T not present` error). Fixed by adding `gradle.properties` to pin `org.gradle.java.home` to JDK 21. This should be noted for any new developer setup.
+- Ping fires only once per startup (not 3 times as in DC001) because `BrowserClient.onLoadEnd` now checks `frame.isMain()` before pinging, filtering out sub-frame load events.
+- `AppState.browserLoadFinished()` from a non-`LoadingChatGPT` state is silently ignored — this handles the real browser noise without crashing.

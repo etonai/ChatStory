@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.chatstory"
-version = "0.1.0-SPIKE"
+version = "0.2.0"
 
 java {
     toolchain {
@@ -17,22 +17,25 @@ repositories {
 }
 
 dependencies {
-    // jcefmaven wraps java-cef and handles native binary download/extraction automatically.
-    // On first run, ~100MB of Chromium natives are downloaded to ./jcef-bundle.
-    // Distribution confirmed: Windows x64, Java 21, jpackage-compatible via bundled-natives approach.
-    // See: https://github.com/jcefmaven/jcefmaven
     implementation("me.friwi:jcefmaven:146.0.10")
+    implementation("com.google.code.gson:gson:2.11.0")
+
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 application {
-    mainClass.set("com.chatstory.spike.Main")
+    mainClass.set("com.chatstory.Main")
 }
 
 tasks.named<JavaExec>("run") {
-    // Suppress restricted-method warnings from JCEF native loader on Java 21+
     jvmArgs(
         "--add-opens", "java.desktop/sun.awt=ALL-UNNAMED",
         "--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED",
         "--enable-native-access=ALL-UNNAMED"
     )
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }

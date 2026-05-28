@@ -33,7 +33,15 @@ See the [Hydraulic deployment guide](https://hydraulic.dev/blog/13-deploying-app
 gradlew.bat run
 ```
 
-**On first run only:** JCEF will download and extract Chromium native binaries. This takes 1–3 minutes depending on connection speed and prints progress to the console. Subsequent launches start immediately.
+**On first run only:** JCEF will download and extract Chromium native binaries (~100 MB). This takes 1–3 minutes and prints progress to the console. Subsequent launches start immediately.
+
+## Running Tests
+
+```bat
+gradlew.bat test
+```
+
+Test reports: `build/reports/tests/test/index.html`
 
 ---
 
@@ -75,11 +83,11 @@ Click the **DevTools** button in the toolbar to open Chromium DevTools for the c
 
 ---
 
-## Known Issues (DC-001 Spike)
+## Known Issues
 
-- This is spike/prototype code. The package `com.chatstory.spike` is intentionally temporary and will be replaced in DevCycle 002.
 - JVM warnings about "restricted method" from JCEF's native loader are expected and harmless on Java 21+.
-- The JCEF download on first run prints `null` for a progress percentage in some environments — this is a cosmetic issue in jcefmaven's console progress handler.
+- The Chromium registry error at startup (`Failed opening key Software\Chromium`) is expected and harmless in embedded contexts.
+- If `gradle.properties` pins `org.gradle.java.home` to JDK 21, ensure that path is valid on your machine.
 
 ---
 
