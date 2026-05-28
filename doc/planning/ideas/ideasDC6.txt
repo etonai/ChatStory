@@ -1,0 +1,43 @@
+I'm thinking about features for DC6 and beyond
+
+Story Mode vs Unassisted mode - sometimes we just want it to act like the ChatGPT browser, sometimes we want this enhanced
+Context - The ability to easily upload context files to chatgpt
+Canon Continuity - The ability to accept/reject "story beats" that the assistant generates and store them in a canonical file
+
+## Story Mode vs Unassisted mode
+The parsing features and the assistant response window amd canon continuity are part of story mode.
+If we are in unassisted mode, then the user input is not parsed, it is just sent directly to chatgpt. And the assistant responses are not tracked.
+There should be a toggle somewhere to handle this (Main Tab for now)
+
+## Context
+Ideal Context adding:
+This should be a tab on the right pane.
+There will be text list, empty at first.
+The user will files to that text list - the user will see just the file name, but the system will keep track of the paths. These will be checkboxes.
+The user will be able to select checkboxes, and then hit a send button, and all of those files will be uploaded as context to ChatGPT
+
+Not as ideal context adding:
+If we aren't able to automatically send files to ChatGPT through this app, the next best thing is to copy all of the files into a local directory.
+That way, the user can bulk upload everything in a single directory instead of navigating through multiple directories and picking multiple files and uploading them individually
+
+## Canon Continuity
+The left pane is currently for Assistant Response.
+Instead, there should be tabs, and the 2nd tab will be the Canon tab.
+Assistant response is the immediate response.
+We'll add a button, next to the copy button. "Add to Canon"
+
+There will be a canonical file that will keep every response that has been "Add to Canon". The user will be able to see all of the canonical events in the Canon tab.
+The user will also be able to save that canonical file to a location in markdown format.
+
+## Other features
+
+Dark mode: The app is very bright. I would like to default it to something more akin to a "dark mode", but also give the user the option to put it into light mode
+
+User can highlight text in the Assistant response window and then right click for some menu options:
+- Context Leakage: The system sends a prompt to ChatGPT "Do not rewrite the beat, but there is a context leakage problem with: " and adds the highlighted text
+- Bad writing: The system sends a prompt to ChatGPT "Do not rewrite the beat, but this is bad writing: " and adds the highlighted text
+- Re-evaluate: The system sends a prompt to ChatGPT "Do not rewrite the beat, but re-evaluate this text you generated: " and adds the highlighted text
+
+REDO button - This will automatically send a prompt to ChatGPT "Please redo the last story beat"
+
+
