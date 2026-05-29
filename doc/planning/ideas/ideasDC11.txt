@@ -45,7 +45,7 @@ Or maybe the highlight will end up in the canon document.
 it will be up to the user to figure out how to parse that later.
 
 
-## Automatic Canon Tracking
+## Automatic Canon Tracking - IMPLEMENTED
 
 Require that all stories incorporate tracking "beats"
 
@@ -63,4 +63,49 @@ If the # of the new beat is a new beat #, then it adds the "current beat" to the
 
 Additionally, when the user Saves Canon, if the current beat has not been saved to canon already, the system will ask if the user wants to save the beat to canon before saving the canon file.
 
+
+## Configurable Correction Type
+
+In the Assistant Response window, the user already has the ability to highlight text and then right click to see a menu of options of quick responses to sent to ChatGPT
+
+What if additional values could be added instead of relying on the hardcoded values?
+
+They are currently hardcoded in :  src/main/java/com/chatstory/bridge/CorrectionType.java,
+
+Here is an example:
+    BAD_WRITING(
+            "Bad Writing",
+            "Do not rewrite the beat, but this is bad writing: "),
+
+This is from the file:
+    CorrectionType(String label, String prefix) {
+        this.label = label;
+        this.prefix = prefix;
+    }
+    Let's change prefix to complaint
+
+ALSO, we should refactor this a bit.
+
+Corrections should always start with "Do not rewrite the beat, but "
+And the complaint "this is bad writing" is the varied part
+
+In the Configuration tab, we let users add more label + complaint values for the right click menu
+
+
+# Streamline process
+
+What should my process be when I'm using this?
+
+1. Send initial controller
+2. Upload Rules
+3. Upload characters and history
+4. Send Interaction Rules
+5. Send controller part 2
+6. Start the scene
+
+
+Since 1-5 are pretty similar, I can streamline this.
+
+
+Here's my idea:
 

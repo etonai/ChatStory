@@ -19,6 +19,7 @@ public class OutputPanel extends JPanel {
 
     private final JTextArea textArea = new JTextArea();
     private final JButton addToCanonButton = new JButton("Add to Canon");
+    private final JLabel responseLabel = new JLabel("Assistant Response");
 
     public OutputPanel(CanonStore canonStore, Consumer<String> onCanonAdded,
                        Consumer<String> onSendPrompt, Runnable beforeFocusRequest) {
@@ -59,7 +60,7 @@ public class OutputPanel extends JPanel {
         buttonPanel.add(copyButton);
 
         JPanel header = new JPanel(new BorderLayout());
-        header.add(new JLabel("Assistant Response"), BorderLayout.CENTER);
+        header.add(responseLabel, BorderLayout.CENTER);
         header.add(buttonPanel, BorderLayout.EAST);
 
         add(header, BorderLayout.NORTH);
@@ -136,7 +137,23 @@ public class OutputPanel extends JPanel {
         });
     }
 
+    public void setResponse(String text, int beatNumber) {
+        UiThread.run(() -> {
+            responseLabel.setText("Current Beat " + beatNumber);
+            textArea.setText(text == null ? "" : text);
+            textArea.setCaretPosition(0);
+            boolean hasContent = text != null && !text.isBlank();
+            addToCanonButton.setEnabled(hasContent);
+            if (hasContent) addToCanonButton.setText("Add to Canon");
+        });
+    }
+
     public void clear() {
-        setResponse("");
+        UiThread.run(() -> {
+            responseLabel.setText("Assistant Response");
+            textArea.setText("");
+            addToCanonButton.setText("Add to Canon");
+            addToCanonButton.setEnabled(false);
+        });
     }
 }

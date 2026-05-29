@@ -1,6 +1,6 @@
 # DevCycle 013: Automatic Canon Beat Tracking
 
-**Status:** Planning
+**Status:** Implemented
 **Start Date:** 2026-05-29
 **Target Completion:** 2026-08-06
 **Focus:** Automatically track story beats from assistant responses and move completed beats into Canon when a newer beat arrives.
@@ -76,13 +76,13 @@ DC13 focuses only on detecting beat-numbered responses and maintaining the curre
 
 ### Phase 1: Beat Parsing Model
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Add a pure Java beat parser/model.
-- [ ] Parse `<Beat #>` markers from the first two lines only.
-- [ ] Return no beat when the marker is absent.
-- [ ] Return no beat for invalid markers.
-- [ ] Add unit tests for first-line marker, second-line marker, missing marker, invalid marker, and marker after line two.
+- [x] Add a pure Java beat parser/model.
+- [x] Parse `<Beat #>` markers from the first two lines only.
+- [x] Return no beat when the marker is absent.
+- [x] Return no beat for invalid markers.
+- [x] Add unit tests for first-line marker, second-line marker, missing marker, invalid marker, and marker after line two.
 
 **Technical Notes:**
 
@@ -90,13 +90,13 @@ Keep beat parsing independent from Swing. A small `BeatParser` returning an opti
 
 ### Phase 2: Current Beat State
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Add a current beat model that tracks beat number, text, and whether it has been appended to Canon.
-- [ ] Support setting/replacing the current beat with the same beat number.
-- [ ] Support detecting when a new beat number requires the old beat to be appended first.
-- [ ] Avoid duplicate append of the same current beat.
-- [ ] Add unit tests for same-beat replacement, new-beat rollover, and non-beat response handling.
+- [x] Add a current beat model that tracks beat number, text, and whether it has been appended to Canon.
+- [x] Support setting/replacing the current beat with the same beat number.
+- [x] Support detecting when a new beat number requires the old beat to be appended first.
+- [x] Avoid duplicate append of the same current beat.
+- [x] Add unit tests for same-beat replacement, new-beat rollover, and non-beat response handling.
 
 **Technical Notes:**
 
@@ -104,15 +104,15 @@ This should be testable without UI. The model can return an append-needed event/
 
 ### Phase 3: Response Panel Integration
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Update response handling so beat-numbered responses are routed through current beat tracking.
-- [ ] Change the response header/title to `Current Beat #` when a beat is active.
-- [ ] Keep non-beat responses visible without changing current beat state.
-- [ ] Preserve editable response text behavior.
-- [ ] Preserve correction menu behavior.
-- [ ] Preserve Clear, Copy, and Add to Canon controls.
-- [ ] Ensure same-beat rewrites update the current beat display without appending to Canon.
+- [x] Update response handling so beat-numbered responses are routed through current beat tracking.
+- [x] Change the response header/title to `Current Beat #` when a beat is active.
+- [x] Keep non-beat responses visible without changing current beat state.
+- [x] Preserve editable response text behavior.
+- [x] Preserve correction menu behavior.
+- [x] Preserve Clear, Copy, and Add to Canon controls.
+- [x] Ensure same-beat rewrites update the current beat display without appending to Canon.
 
 **Technical Notes:**
 
@@ -120,13 +120,15 @@ This should be testable without UI. The model can return an append-needed event/
 
 ### Phase 4: Automatic Canon Append
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] When a new beat number arrives, append the previous current beat to Canon.
-- [ ] Reuse the same append path that updates `CanonPanel`.
-- [ ] Ensure `00_Canon_Temp.md` is updated after automatic append.
-- [ ] Record automatic append behavior in the DC13 document after implementation.
-- [ ] Keep manual Add to Canon working for user-controlled cases.
+- [x] When a new beat number arrives, append the previous current beat to Canon.
+- [x] Reuse the same append path that updates `CanonPanel`.
+- [x] Ensure `00_Canon_Temp.md` is updated after automatic append.
+- [x] Record automatic append behavior in the DC13 document after implementation.
+- [x] Keep manual Add to Canon working for user-controlled cases.
+
+**Implementation note:** `LeftPanePanel.onResponseComplete` calls `canonPanel.appendEntry(result.textToAppend)` directly on rollover. Manual Add to Canon continues to go through the same `appendEntry` path. The `onCanonAdded` callback from `OutputPanel` also calls `currentBeatModel.markAppended()` so a manually-added beat is tracked as appended.
 
 **Technical Notes:**
 
@@ -134,13 +136,13 @@ The existing `CanonPanel.appendEntry(...)` already auto-saves temp content. Pref
 
 ### Phase 5: Save Canon Unsaved Beat Prompt
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Detect whether the current beat has not been appended to Canon.
-- [ ] When the user saves Canon, ask whether to append the current beat first.
-- [ ] If the user agrees, append the current beat and then save.
-- [ ] If the user declines, save Canon without the current beat.
-- [ ] If there is no active unsaved beat, save normally.
+- [x] Detect whether the current beat has not been appended to Canon.
+- [x] When the user saves Canon, ask whether to append the current beat first.
+- [x] If the user agrees, append the current beat and then save.
+- [x] If the user declines, save Canon without the current beat.
+- [x] If there is no active unsaved beat, save normally.
 
 **Technical Notes:**
 
@@ -150,7 +152,7 @@ This likely belongs near `CanonPanel.saveToFile(...)`, but the current beat stat
 
 **Status:** Planning
 
-- [ ] Run `gradlew.bat clean test`.
+- [x] Run `gradlew.bat clean test`.
 - [ ] Manually validate first beat detection.
 - [ ] Manually validate same-beat rewrite behavior.
 - [ ] Manually validate new-beat automatic append.
@@ -372,6 +374,41 @@ Reasoning: Unassisted Mode is supposed to behave like a plain ChatGPT browser wr
 Recommendation: if the user chooses to append the current beat before saving, append through the normal Canon path first, including temp autosave, then continue the explicit Save flow.
 
 Reasoning: this preserves a single Canon append pathway and keeps the Canon tab/temp file consistent even if the final save is canceled or fails. If the explicit save succeeds, the existing save behavior can delete/wipe the temp file afterward.
+
+---
+
+## Bugs and Refinements
+
+### BR-1: Beat marker does not require angle brackets
+
+**Discovered:** 2026-05-29, during user review of implementation.
+
+**Problem:** The initial implementation required `<Beat #>` with angle brackets. ChatGPT typically emits `Beat 1` without them.
+
+**Fix:** Changed `BeatParser` pattern from `<\s*Beat\s+(\d+)\s*>` to `\bBeat\s+(\d+)\b`. Any occurrence of `Beat N` (where N is a number) in the first two lines is now a valid marker. Updated all parser tests accordingly.
+
+---
+
+### BR-2: Non-beat responses must not touch the response panel
+
+**Discovered:** 2026-05-29, during user review of implementation.
+
+**Problem:** The initial implementation displayed non-beat responses in the response panel. The response panel is intended to show only story beats.
+
+**Fix:** `LeftPanePanel.onResponseComplete` now returns early for non-beat responses. The output panel is not updated and the current beat display is preserved unchanged.
+
+---
+
+### BR-3: Response panel only updates on a completed beat — no streaming, no clear on submit
+
+**Discovered:** 2026-05-29, during user review of implementation.
+
+**Problem:** The initial implementation showed partial (streaming) responses in the output panel and cleared the panel when a prompt was submitted. The correct behavior is: the current beat stays visible until a new completed beat arrives.
+
+**Fix:**
+- `onResponsePartial` in `AppFrame` no longer updates the output panel.
+- `onPromptSubmitted` no longer calls `clearResponse()`.
+- The Fetch button and browser context menu handler now route through `onResponseComplete` instead of `setResponse`, so fetched or pasted responses are also subject to beat detection.
 
 ---
 

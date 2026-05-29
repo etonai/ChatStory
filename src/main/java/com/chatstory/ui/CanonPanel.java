@@ -1,5 +1,6 @@
 package com.chatstory.ui;
 
+import com.chatstory.beat.CurrentBeatModel;
 import com.chatstory.canon.CanonFolderStore;
 import com.chatstory.canon.CanonStore;
 
@@ -23,11 +24,13 @@ public class CanonPanel extends JPanel {
     private final JButton saveButton = new JButton("Save");
     private final JButton clearButton = new JButton("Clear");
     private final CanonFolderStore canonFolderStore;
+    private final CurrentBeatModel currentBeatModel;
 
     public CanonPanel(CanonStore canonStore, Runnable beforeFocusRequest,
-                      CanonFolderStore canonFolderStore) {
+                      CanonFolderStore canonFolderStore, CurrentBeatModel currentBeatModel) {
         super(new BorderLayout(6, 6));
         this.canonFolderStore = canonFolderStore;
+        this.currentBeatModel = currentBeatModel;
         setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
 
         textArea.setEditable(true);
@@ -113,6 +116,19 @@ public class CanonPanel extends JPanel {
     }
 
     private void saveToFile() {
+        if (currentBeatModel.hasUnappendedBeat()) {
+            int choice = JOptionPane.showConfirmDialog(this,
+                    "Current Beat " + currentBeatModel.getBeatNumber()
+                            + " has not been added to Canon.\nAppend it before saving?",
+                    "Unsaved Beat",
+                    JOptionPane.YES_NO_CANCEL_OPTION);
+            if (choice == JOptionPane.CANCEL_OPTION || choice == JOptionPane.CLOSED_OPTION) return;
+            if (choice == JOptionPane.YES_OPTION) {
+                appendEntry(currentBeatModel.getText());
+                currentBeatModel.markAppended();
+            }
+        }
+
         JFileChooser chooser = new JFileChooser();
         chooser.setDialogTitle("Save Canon");
         chooser.setFileFilter(new FileNameExtensionFilter("Markdown files (*.md)", "md"));

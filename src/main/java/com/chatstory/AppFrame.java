@@ -51,8 +51,9 @@ public class AppFrame extends JFrame {
         leftPane = new LeftPanePanel(canonStore,
                 prompt -> chatBridge.sendPrompt(prompt, statusResponseListener("Correction sent")),
                 () -> browser.setFocus(false),
-                canonFolderStore);
-        client.addContextMenuHandler(new BrowserContextMenuHandler(leftPane::setResponse));
+                canonFolderStore,
+                modeModel);
+        client.addContextMenuHandler(new BrowserContextMenuHandler(leftPane::onResponseComplete));
         ParsePreviewPanel parsePreviewPanel = new ParsePreviewPanel();
         JTabbedPane rightTabs = new JTabbedPane();
         rightTabs.addTab("MAIN", new JPanel(new BorderLayout()));
@@ -92,7 +93,7 @@ public class AppFrame extends JFrame {
             chatBridge.reset();
             chatBridge.fetchLatestResponse(text -> {
                 if (text != null && !text.isBlank()) {
-                    leftPane.setResponse(text);
+                    leftPane.onResponseComplete(text);
                     UiThread.run(() -> statusLabel.setText(" Response fetched"));
                 } else {
                     UiThread.run(() -> statusLabel.setText(" No response found in browser"));
@@ -186,22 +187,17 @@ modeModel.addListener((prev, current) ->
         return new ResponseListener() {
             @Override
             public void onPromptSubmitted(long requestId) {
-                UiThread.run(() -> {
-                    if (modeModel.current() == AppMode.STORY) {
-                        leftPane.clearResponse();
-                    }
-                    statusLabel.setText(" " + successText);
-                });
+                UiThread.run(() -> statusLabel.setText(" " + successText));
             }
 
             @Override
             public void onResponsePartial(long requestId, String responseText) {
-                leftPane.setResponse(responseText);
+                // Response panel only updates when a complete beat is received
             }
 
             @Override
             public void onResponseComplete(long requestId, String responseText) {
-                leftPane.setResponse(responseText);
+                leftPane.onResponseComplete(responseText);
                 UiThread.run(() -> statusLabel.setText(" Response complete"));
             }
 
