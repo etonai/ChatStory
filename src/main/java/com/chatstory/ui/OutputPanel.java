@@ -25,6 +25,7 @@ public class OutputPanel extends JPanel {
         super(new BorderLayout(6, 6));
         setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
 
+        textArea.setFont(textArea.getFont().deriveFont(14f));
         textArea.setEditable(true);
         textArea.setLineWrap(true);
         textArea.setWrapStyleWord(true);

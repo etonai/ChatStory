@@ -52,6 +52,7 @@ public class InputPanel extends JPanel {
         this.beforeFocusRequest = beforeFocusRequest == null ? () -> {} : beforeFocusRequest;
         this.previewConsumer = previewConsumer == null ? segments -> {} : previewConsumer;
 
+        textArea.setFont(textArea.getFont().deriveFont(14f));
         textArea.setLineWrap(true);
         textArea.setWrapStyleWord(true);
         JScrollPane scrollPane = new JScrollPane(textArea);

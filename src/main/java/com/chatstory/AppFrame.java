@@ -22,6 +22,9 @@ import org.cef.browser.CefBrowser;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
@@ -145,8 +148,23 @@ modeModel.addListener((prev, current) ->
         themeModel.addListener((prev, current) ->
                 UiThread.run(() -> themeApplier.apply(this, current)));
 
+        installKeyboardShortcuts(resetBtn, redoBtn, fetchBtn);
+
         setVisible(true);
         UiThread.run(() -> themeApplier.apply(this, themeModel.current()));
+    }
+
+    private void installKeyboardShortcuts(JButton resetBtn, JButton redoBtn, JButton fetchBtn) {
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
+            if (e.getID() != KeyEvent.KEY_PRESSED) return false;
+            if ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) == 0) return false;
+            switch (e.getKeyCode()) {
+                case KeyEvent.VK_X: resetBtn.doClick(); return true;
+                case KeyEvent.VK_R: redoBtn.doClick(); return true;
+                case KeyEvent.VK_F: fetchBtn.doClick(); return true;
+                default: return false;
+            }
+        });
     }
 
     private String labelFor(AppState.State state) {
