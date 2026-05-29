@@ -24,8 +24,10 @@ additionally, the canon document may want to keep track of all of the characters
 
 That way, a system can scan a canon document's header and find out who is in the document, without searching through the entire document.
 
+
 ## Canon Document consolidation and summarizing
 We might create a function that will send a canon document to ChatGPT, and ChatGPT can summarize it and essentially make it more compact.
+
 
 ## Canon document highlights
 We may create a highlights section (maybe even in MAIN)
@@ -41,4 +43,24 @@ Or maybe the highlight will end up in the canon document.
 
 // HIGHLIGHT: Honda Accord purchased for $15,000
 it will be up to the user to figure out how to parse that later.
+
+
+## Automatic Canon Tracking
+
+Require that all stories incorporate tracking "beats"
+
+Define a beat as something like: One piece of the story
+Basically, each ChatGPT prompt will generate 1 story beat. That is the unit of measurement of a story.
+Sometimes we need to rewrite a beat before we move on to the next beat.
+
+Instead of "Assistant Response", that window will be "Current beat ###" where ### is the number of the current beat, if any
+
+In the first two lines of any ChatGPT response, the STORY WORKSTATION will look for <Beat #>
+If there is no <Beat #> somewhere, then it isn't a beat, and it will not change the Current beat text.
+
+If the # of the new beat is the same as the current beat, it just overwrites the current beat
+If the # of the new beat is a new beat #, then it adds the "current beat" to the canon (and also automatically updates the temp canon file with it)
+
+Additionally, when the user Saves Canon, if the current beat has not been saved to canon already, the system will ask if the user wants to save the beat to canon before saving the canon file.
+
 
