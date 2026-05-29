@@ -115,6 +115,10 @@ public class CanonPanel extends JPanel {
         }
     }
 
+    public void saveCanon() {
+        saveToFile();
+    }
+
     private void saveToFile() {
         if (currentBeatModel.hasUnappendedBeat()) {
             int choice = JOptionPane.showConfirmDialog(this,

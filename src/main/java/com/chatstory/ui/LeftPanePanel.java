@@ -57,4 +57,12 @@ public class LeftPanePanel extends JPanel {
     public void clearResponse() {
         outputPanel.clear();
     }
+
+    public void endSession() {
+        if (currentBeatModel.hasUnappendedBeat()) {
+            canonPanel.appendEntry(currentBeatModel.getText());
+            currentBeatModel.markAppended();
+        }
+        canonPanel.saveCanon();
+    }
 }

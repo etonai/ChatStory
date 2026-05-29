@@ -20,6 +20,10 @@ public final class AppConfig {
     private final String contextFileListPath;
     private final String stagingFolderPath;
     private final String canonConfigPath;
+    private final String sessionControllerConfigPath;
+    private final String intermediateControllerConfigPath;
+    private final String finalControllerConfigPath;
+    private final String rulesFileListPath;
 
     public AppConfig() {
         String localAppData = System.getenv("LOCALAPPDATA");
@@ -39,9 +43,13 @@ public final class AppConfig {
         File configFile   = new File(appRoamDir, "config.properties");
         configFilePath = configFile.getAbsolutePath();
 
-        contextFileListPath = new File(appRoamDir, "context-files.json").getAbsolutePath();
-        stagingFolderPath   = new File(appLocalDir, "context-staging").getAbsolutePath();
-        canonConfigPath     = new File(appRoamDir, "canon-config.json").getAbsolutePath();
+        contextFileListPath          = new File(appRoamDir, "context-files.json").getAbsolutePath();
+        stagingFolderPath            = new File(appLocalDir, "context-staging").getAbsolutePath();
+        canonConfigPath              = new File(appRoamDir, "canon-config.json").getAbsolutePath();
+        sessionControllerConfigPath      = new File(appRoamDir, "session-controller.json").getAbsolutePath();
+        intermediateControllerConfigPath = new File(appRoamDir, "intermediate-controller.json").getAbsolutePath();
+        finalControllerConfigPath        = new File(appRoamDir, "final-controller.json").getAbsolutePath();
+        rulesFileListPath                = new File(appRoamDir, "rules-files.json").getAbsolutePath();
 
         // Create application directories now so JCEF and config reads don't fail
         ensureDir(appLocalDir);
@@ -81,10 +89,14 @@ public final class AppConfig {
         }
     }
 
-    public String getTargetUrl()            { return targetUrl; }
-    public String getProfilePath()          { return profilePath; }
-    public String getConfigFilePath()       { return configFilePath; }
-    public String getContextFileListPath()  { return contextFileListPath; }
-    public String getStagingFolderPath()    { return stagingFolderPath; }
-    public String getCanonConfigPath()      { return canonConfigPath; }
+    public String getTargetUrl()                   { return targetUrl; }
+    public String getProfilePath()                 { return profilePath; }
+    public String getConfigFilePath()              { return configFilePath; }
+    public String getContextFileListPath()         { return contextFileListPath; }
+    public String getStagingFolderPath()           { return stagingFolderPath; }
+    public String getCanonConfigPath()             { return canonConfigPath; }
+    public String getSessionControllerConfigPath()      { return sessionControllerConfigPath; }
+    public String getIntermediateControllerConfigPath() { return intermediateControllerConfigPath; }
+    public String getFinalControllerConfigPath()        { return finalControllerConfigPath; }
+    public String getRulesFileListPath()                { return rulesFileListPath; }
 }

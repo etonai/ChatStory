@@ -19,5 +19,14 @@
     ],
     "userMsg": [
         "[data-message-author-role='user']"
+    ],
+    "uploadButton": [
+        "button[data-testid='composer-plus-btn']",
+        "#composer-plus-btn",
+        "button[aria-label='Add files and more']",
+        "button[aria-label='Attach files']",
+        "button[aria-label='Upload files']",
+        "button[data-testid='upload-button']",
+        "button[aria-label='Add photos and files']"
     ]
 }

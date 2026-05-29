@@ -7,6 +7,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.cef.browser.CefBrowser;
 
+import java.awt.AWTException;
+import java.awt.Robot;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -83,6 +86,23 @@ public class ChatGptBridge implements ChatBridge {
             clearActiveLocked();
         }
         appState.reset();
+    }
+
+    @Override
+    public void clickUploadFile() {
+        browser.setFocus(true);
+        Thread.ofVirtual().start(() -> {
+            try {
+                Thread.sleep(100); // let focus settle before sending keystrokes
+                Robot robot = new Robot();
+                robot.keyPress(KeyEvent.VK_CONTROL);
+                robot.keyPress(KeyEvent.VK_U);
+                robot.keyRelease(KeyEvent.VK_U);
+                robot.keyRelease(KeyEvent.VK_CONTROL);
+            } catch (AWTException | InterruptedException e) {
+                System.err.println("[ChatGptBridge] clickUploadFile failed: " + e.getMessage());
+            }
+        });
     }
 
     public void fetchLatestResponse(Consumer<String> onResult) {

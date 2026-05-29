@@ -9,20 +9,25 @@ import com.chatstory.browser.BrowserPanel;
 import com.chatstory.canon.CanonStore;
 import org.cef.CefClient;
 import com.chatstory.context.ContextFileStore;
+import com.chatstory.controller.FinalControllerStore;
+import com.chatstory.controller.IntermediateControllerStore;
+import com.chatstory.controller.SessionControllerStore;
 import com.chatstory.mode.AppMode;
 import com.chatstory.mode.AppModeModel;
+import com.chatstory.rules.RulesFileStore;
 import com.chatstory.theme.NativeThemeApplier;
 import com.chatstory.theme.NativeThemeModel;
 import com.chatstory.ui.ConfigurationPanel;
 import com.chatstory.ui.ContextPanel;
 import com.chatstory.ui.InputPanel;
 import com.chatstory.ui.LeftPanePanel;
+import com.chatstory.ui.MainPanel;
 import com.chatstory.ui.ParsePreviewPanel;
+import com.chatstory.ui.RulesPanel;
 import org.cef.browser.CefBrowser;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
@@ -38,7 +43,11 @@ public class AppFrame extends JFrame {
 
     public AppFrame(AppState appState, BrowserPanel browserPanel, CefBrowser browser,
                     ChatGptBridge chatBridge, CefClient client,
-                    ContextFileStore contextFileStore, CanonFolderStore canonFolderStore) {
+                    ContextFileStore contextFileStore, CanonFolderStore canonFolderStore,
+                    SessionControllerStore sessionControllerStore,
+                    IntermediateControllerStore intermediateControllerStore,
+                    FinalControllerStore finalControllerStore,
+                    RulesFileStore rulesFileStore) {
         super("Story Workstation");
 
         setSize(1400, 900);
@@ -54,12 +63,51 @@ public class AppFrame extends JFrame {
                 canonFolderStore,
                 modeModel);
         client.addContextMenuHandler(new BrowserContextMenuHandler(leftPane::onResponseComplete));
+
+        Runnable onRedo = () -> chatBridge.sendPrompt(
+                CorrectionType.REDO_PROMPT,
+                statusResponseListener("Redo sent"));
+
+        Runnable onContinue = () -> chatBridge.sendPrompt(
+                CorrectionType.CONTINUE_PROMPT,
+                statusResponseListener("Continue sent"));
+
+        Runnable onEndScene = () -> chatBridge.sendPrompt(
+                CorrectionType.END_SCENE_PROMPT,
+                statusResponseListener("End scene sent"));
+
+        Runnable onReset = chatBridge::reset;
+
+        Runnable onFetch = () -> {
+            chatBridge.reset();
+            chatBridge.fetchLatestResponse(text -> {
+                if (text != null && !text.isBlank()) {
+                    leftPane.onResponseComplete(text);
+                    UiThread.run(() -> statusLabel.setText(" Response fetched"));
+                } else {
+                    UiThread.run(() -> statusLabel.setText(" No response found in browser"));
+                }
+            });
+        };
+
         ParsePreviewPanel parsePreviewPanel = new ParsePreviewPanel();
+        MainPanel mainPanel = new MainPanel(
+                sessionControllerStore,
+                intermediateControllerStore,
+                finalControllerStore,
+                rulesFileStore,
+                contextFileStore,
+                text -> chatBridge.sendPrompt(text, statusResponseListener("Controller sent")),
+                chatBridge::clickUploadFile,
+                onRedo, onContinue, onEndScene, onReset, onFetch,
+                leftPane::endSession);
+
         JTabbedPane rightTabs = new JTabbedPane();
-        rightTabs.addTab("MAIN", new JPanel(new BorderLayout()));
+        rightTabs.addTab("MAIN", mainPanel);
         rightTabs.addTab("Configuration", new ConfigurationPanel(modeModel, themeModel, contextFileStore, canonFolderStore));
         rightTabs.addTab("Parsed Input", parsePreviewPanel);
         rightTabs.addTab("Context", new ContextPanel(contextFileStore));
+        rightTabs.addTab("Rules", new RulesPanel(rulesFileStore));
 
         JButton devToolsBtn = new JButton("DevTools");
         devToolsBtn.setToolTipText("Open Chromium DevTools for this page");
@@ -71,43 +119,9 @@ public class AppFrame extends JFrame {
                 "DC3 test injection",
                 statusResponseListener("Test prompt injected")));
 
-        JButton redoBtn = new JButton("Redo");
-        redoBtn.setToolTipText("Redo the last story beat");
-        redoBtn.addActionListener(e -> chatBridge.sendPrompt(
-                CorrectionType.REDO_PROMPT,
-                statusResponseListener("Redo sent")));
-
-        JButton endSceneBtn = new JButton("End Scene");
-        endSceneBtn.setToolTipText("End the current scene");
-        endSceneBtn.addActionListener(e -> chatBridge.sendPrompt(
-                CorrectionType.END_SCENE_PROMPT,
-                statusResponseListener("End scene sent")));
-
-        JButton resetBtn = new JButton("Reset");
-        resetBtn.setToolTipText("Force app state back to Ready");
-        resetBtn.addActionListener(e -> chatBridge.reset());
-
-        JButton fetchBtn = new JButton("Fetch");
-        fetchBtn.setToolTipText("Force-read the current response from the browser");
-        fetchBtn.addActionListener(e -> {
-            chatBridge.reset();
-            chatBridge.fetchLatestResponse(text -> {
-                if (text != null && !text.isBlank()) {
-                    leftPane.onResponseComplete(text);
-                    UiThread.run(() -> statusLabel.setText(" Response fetched"));
-                } else {
-                    UiThread.run(() -> statusLabel.setText(" No response found in browser"));
-                }
-            });
-        });
-
         JPanel leftTools = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         leftTools.add(devToolsBtn);
         leftTools.add(testInjectBtn);
-        leftTools.add(redoBtn);
-        leftTools.add(endSceneBtn);
-        leftTools.add(resetBtn);
-        leftTools.add(fetchBtn);
 
         JPanel toolbar = new JPanel(new BorderLayout(6, 0));
         toolbar.setBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));
@@ -149,20 +163,20 @@ modeModel.addListener((prev, current) ->
         themeModel.addListener((prev, current) ->
                 UiThread.run(() -> themeApplier.apply(this, current)));
 
-        installKeyboardShortcuts(resetBtn, redoBtn, fetchBtn);
+        installKeyboardShortcuts(onReset, onRedo, onFetch);
 
         setVisible(true);
         UiThread.run(() -> themeApplier.apply(this, themeModel.current()));
     }
 
-    private void installKeyboardShortcuts(JButton resetBtn, JButton redoBtn, JButton fetchBtn) {
+    private void installKeyboardShortcuts(Runnable onReset, Runnable onRedo, Runnable onFetch) {
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
             if (e.getID() != KeyEvent.KEY_PRESSED) return false;
             if ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) == 0) return false;
             switch (e.getKeyCode()) {
-                case KeyEvent.VK_X: resetBtn.doClick(); return true;
-                case KeyEvent.VK_R: redoBtn.doClick(); return true;
-                case KeyEvent.VK_F: fetchBtn.doClick(); return true;
+                case KeyEvent.VK_X: onReset.run(); return true;
+                case KeyEvent.VK_R: onRedo.run(); return true;
+                case KeyEvent.VK_F: onFetch.run(); return true;
                 default: return false;
             }
         });

@@ -14,7 +14,9 @@ public class ContextFileStore {
     private Path currentStagingPath;
     private Path lastDirectory;
     private final List<Path> entries = new ArrayList<>();
+    private final Set<Path> checkedFiles = new LinkedHashSet<>();
     private final List<Runnable> stagingPathListeners = new ArrayList<>();
+    private final List<Runnable> checkedListeners = new ArrayList<>();
     private final Gson gson = new Gson();
 
     public ContextFileStore(String jsonFilePath, String defaultStagingFolderPath) {
@@ -41,6 +43,11 @@ public class ContextFileStore {
             if (data.stagingPath != null) {
                 currentStagingPath = Path.of(data.stagingPath).toAbsolutePath();
             }
+            if (data.checkedFiles != null) {
+                for (String p : data.checkedFiles) {
+                    checkedFiles.add(Path.of(p).toAbsolutePath());
+                }
+            }
         } catch (Exception e) {
             System.err.println("[ContextFileStore] Failed to load file list: " + e.getMessage()
                     + " — starting with empty list");
@@ -56,7 +63,36 @@ public class ContextFileStore {
 
     public void remove(Path filePath) {
         Path absolute = filePath.toAbsolutePath();
-        if (entries.remove(absolute)) save();
+        boolean removed = entries.remove(absolute);
+        checkedFiles.remove(absolute);
+        if (removed) save();
+    }
+
+    public boolean isChecked(Path filePath) {
+        return checkedFiles.contains(filePath.toAbsolutePath());
+    }
+
+    public void setChecked(Path filePath, boolean checked) {
+        Path absolute = filePath.toAbsolutePath();
+        if (checked) {
+            checkedFiles.add(absolute);
+        } else {
+            checkedFiles.remove(absolute);
+        }
+        save();
+        for (Runnable listener : checkedListeners) listener.run();
+    }
+
+    public List<Path> getCheckedEntries() {
+        List<Path> result = new ArrayList<>();
+        for (Path entry : entries) {
+            if (checkedFiles.contains(entry)) result.add(entry);
+        }
+        return Collections.unmodifiableList(result);
+    }
+
+    public void addCheckedListener(Runnable listener) {
+        checkedListeners.add(listener);
     }
 
     public List<Path> getEntries() {
@@ -84,6 +120,21 @@ public class ContextFileStore {
 
     public void addStagingPathListener(Runnable listener) {
         stagingPathListeners.add(listener);
+    }
+
+    public void clearStaging() {
+        if (!Files.exists(currentStagingPath)) return;
+        try (var stream = Files.list(currentStagingPath)) {
+            stream.filter(Files::isRegularFile).forEach(file -> {
+                try {
+                    Files.delete(file);
+                } catch (IOException e) {
+                    System.err.println("[ContextFileStore] Could not delete staged file: " + e.getMessage());
+                }
+            });
+        } catch (IOException e) {
+            System.err.println("[ContextFileStore] Could not list staging directory for clear: " + e.getMessage());
+        }
     }
 
     public StagingResult stageSelected(List<Path> selected) {
@@ -123,6 +174,7 @@ public class ContextFileStore {
     private void save() {
         StoredData data = new StoredData();
         for (Path p : entries) data.files.add(p.toString());
+        for (Path p : checkedFiles) data.checkedFiles.add(p.toString());
         if (lastDirectory != null) data.lastDirectory = lastDirectory.toString();
         if (!currentStagingPath.equals(defaultStagingPath)) {
             data.stagingPath = currentStagingPath.toString();
@@ -138,6 +190,7 @@ public class ContextFileStore {
 
     private static class StoredData {
         List<String> files = new ArrayList<>();
+        List<String> checkedFiles = new ArrayList<>();
         String lastDirectory;
         String stagingPath;
     }

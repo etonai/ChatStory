@@ -34,7 +34,8 @@ public enum CorrectionType {
             "Do not rewrite the beat, but the Day # Beat # header is incorrect: ");
 
     public static final String REDO_PROMPT      = direction("Redo the last story beat");
-    public static final String END_SCENE_PROMPT = direction("End the scene");
+    public static final String CONTINUE_PROMPT  = direction("Continue the scene");
+    public static final String END_SCENE_PROMPT = direction("Do not write any more of the story. Scene Ends.");
 
     private static String direction(String text) {
         return new ScenePromptBuilder().build(

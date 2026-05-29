@@ -7,6 +7,10 @@ import com.chatstory.bridge.ChatGptBridge;
 import com.chatstory.config.AppConfig;
 import com.chatstory.canon.CanonFolderStore;
 import com.chatstory.context.ContextFileStore;
+import com.chatstory.controller.FinalControllerStore;
+import com.chatstory.controller.IntermediateControllerStore;
+import com.chatstory.controller.SessionControllerStore;
+import com.chatstory.rules.RulesFileStore;
 import me.friwi.jcefmaven.CefAppBuilder;
 import me.friwi.jcefmaven.impl.progress.ConsoleProgressHandler;
 import org.cef.CefApp;
@@ -25,6 +29,13 @@ public class Main {
         ContextFileStore contextFileStore = new ContextFileStore(
                 config.getContextFileListPath(), config.getStagingFolderPath());
         CanonFolderStore canonFolderStore = new CanonFolderStore(config.getCanonConfigPath());
+        SessionControllerStore sessionControllerStore =
+                new SessionControllerStore(config.getSessionControllerConfigPath());
+        IntermediateControllerStore intermediateControllerStore =
+                new IntermediateControllerStore(config.getIntermediateControllerConfigPath());
+        FinalControllerStore finalControllerStore =
+                new FinalControllerStore(config.getFinalControllerConfigPath());
+        RulesFileStore rulesFileStore = new RulesFileStore(config.getRulesFileListPath());
 
         System.out.println("Story Workstation starting...");
         System.out.println("  Profile : " + config.getProfilePath());
@@ -66,6 +77,8 @@ public class Main {
         ChatGptBridge chatBridge = new ChatGptBridge(domBridge, browser, appState);
 
         SwingUtilities.invokeLater(() ->
-                new AppFrame(appState, browserPanel, browser, chatBridge, client, contextFileStore, canonFolderStore));
+                new AppFrame(appState, browserPanel, browser, chatBridge, client,
+                        contextFileStore, canonFolderStore,
+                        sessionControllerStore, intermediateControllerStore, finalControllerStore, rulesFileStore));
     }
 }
