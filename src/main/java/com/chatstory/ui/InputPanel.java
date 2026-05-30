@@ -26,7 +26,7 @@ public class InputPanel extends JPanel {
     private final AppState appState;
     private final AppModeModel modeModel;
     private final ChatBridge chatBridge;
-    private final JTextArea textArea = new JTextArea(4, 60);
+    private final JTextArea textArea = new JTextArea(6, 60);
     private final JButton sendButton = new JButton("Send");
     private final Runnable beforeFocusRequest;
     private final SceneInputParser parser = new SceneInputParser();
@@ -65,9 +65,16 @@ public class InputPanel extends JPanel {
         actions.setLayout(new BoxLayout(actions, BoxLayout.Y_AXIS));
         sendButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         resetButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JButton clearButton = new JButton("Clear");
+        clearButton.setToolTipText("Clear the input area");
+        clearButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        clearButton.addActionListener(e -> textArea.setText(""));
+
         actions.add(sendButton);
         actions.add(Box.createVerticalStrut(4));
         actions.add(resetButton);
+        actions.add(Box.createVerticalStrut(4));
+        actions.add(clearButton);
 
         setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
         add(scrollPane, BorderLayout.CENTER);
