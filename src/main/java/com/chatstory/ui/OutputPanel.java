@@ -19,11 +19,14 @@ public class OutputPanel extends JPanel {
 
     private final JTextArea textArea = new JTextArea();
     private final JButton addToCanonButton = new JButton("Add to Canon");
-    private final JLabel responseLabel = new JLabel("Assistant Response");
+    private final JLabel responseLabel = new JLabel("Response Window");
+    private final Consumer<String> onBeatRecorded;
 
     public OutputPanel(CanonStore canonStore, Consumer<String> onCanonAdded,
-                       Consumer<String> onSendPrompt, Runnable beforeFocusRequest) {
+                       Consumer<String> onSendPrompt, Runnable beforeFocusRequest,
+                       Consumer<String> onBeatRecorded) {
         super(new BorderLayout(6, 6));
+        this.onBeatRecorded = onBeatRecorded;
         setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
 
         textArea.setFont(textArea.getFont().deriveFont(14f));
@@ -138,6 +141,7 @@ public class OutputPanel extends JPanel {
     }
 
     public void setResponse(String text, int beatNumber) {
+        if (text != null && !text.isBlank()) onBeatRecorded.accept(text);
         UiThread.run(() -> {
             responseLabel.setText("Current Beat " + beatNumber);
             textArea.setText(text == null ? "" : text);
@@ -150,7 +154,7 @@ public class OutputPanel extends JPanel {
 
     public void clear() {
         UiThread.run(() -> {
-            responseLabel.setText("Assistant Response");
+            responseLabel.setText("Response Window");
             textArea.setText("");
             addToCanonButton.setText("Add to Canon");
             addToCanonButton.setEnabled(false);

@@ -57,8 +57,17 @@ public class InputPanel extends JPanel {
         textArea.setWrapStyleWord(true);
         JScrollPane scrollPane = new JScrollPane(textArea);
 
-        JPanel actions = new JPanel(new BorderLayout());
-        actions.add(sendButton, BorderLayout.NORTH);
+        JButton resetButton = new JButton("Reset");
+        resetButton.setToolTipText("Force app state back to Ready");
+        resetButton.addActionListener(e -> chatBridge.reset());
+
+        JPanel actions = new JPanel();
+        actions.setLayout(new BoxLayout(actions, BoxLayout.Y_AXIS));
+        sendButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        resetButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        actions.add(sendButton);
+        actions.add(Box.createVerticalStrut(4));
+        actions.add(resetButton);
 
         setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
         add(scrollPane, BorderLayout.CENTER);

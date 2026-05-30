@@ -55,6 +55,18 @@ At the end of DevCycle 015:
 - The Save button does not clear the transcript — the transcript is session-only and accumulates until the app closes.
 - No changes to `AppFrame`, `Main`, or any store files are needed.
 
+### Phase 3: Reset Button in Input Panel
+
+**Status:** In Progress
+
+- [ ] Add a **Reset** button to `InputPanel` directly below the Send button.
+- [ ] On click, call `chatBridge.reset()` — the same action as the Reset button in the Commands section.
+
+**Technical Notes:**
+
+- `InputPanel` already holds `chatBridge` as a field, so no new constructor parameters are needed.
+- Change the `actions` panel layout from `BorderLayout` to `BoxLayout(Y_AXIS)` to stack Send and Reset vertically with a small gap between them.
+
 ---
 
 ## Bugs and Refinements

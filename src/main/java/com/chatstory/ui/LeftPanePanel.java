@@ -6,6 +6,7 @@ import com.chatstory.canon.CanonFolderStore;
 import com.chatstory.canon.CanonStore;
 import com.chatstory.mode.AppMode;
 import com.chatstory.mode.AppModeModel;
+import com.chatstory.transcript.TranscriptStore;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,16 +26,19 @@ public class LeftPanePanel extends JPanel {
         super(new BorderLayout());
         this.modeModel = modeModel;
         canonPanel = new CanonPanel(canonStore, beforeFocusRequest, canonFolderStore, currentBeatModel);
+        TranscriptStore transcriptStore = new TranscriptStore();
         outputPanel = new OutputPanel(canonStore,
                 text -> {
                     canonPanel.appendEntry(text);
                     currentBeatModel.markAppended();
                 },
-                onSendPrompt, beforeFocusRequest);
+                onSendPrompt, beforeFocusRequest,
+                transcriptStore::add);
 
         JTabbedPane tabs = new JTabbedPane();
         tabs.addTab("Response", outputPanel);
         tabs.addTab("Canon", canonPanel);
+        tabs.addTab("Transcript", new TranscriptPanel(transcriptStore));
 
         add(tabs, BorderLayout.CENTER);
     }
