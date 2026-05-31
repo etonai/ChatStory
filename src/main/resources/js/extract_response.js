@@ -66,6 +66,14 @@
         return (content.innerText || content.textContent || '').replace(/\r\n/g, '\n').trim();
     }
 
+    function htmlOf(node) {
+        if (!node) return '';
+        var content = node.querySelector('.markdown')
+            || node.querySelector('[data-message-content]')
+            || node;
+        return content.innerHTML || '';
+    }
+
     window.chatStoryExtractResponse = function(options) {
         var requestId = options && options.requestId || 0;
         try {
@@ -112,6 +120,7 @@
                                 requestId: requestId,
                                 ok: true,
                                 text: latestText,
+                                html: htmlOf(target),
                                 message: 'Response extracted'
                             });
                             return;

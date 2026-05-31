@@ -20,6 +20,14 @@
         return (content.innerText || content.textContent || '').replace(/\r\n/g, '\n').trim();
     }
 
+    function htmlOf(node) {
+        if (!node) return '';
+        var content = node.querySelector('.markdown')
+            || node.querySelector('[data-message-content]')
+            || node;
+        return content.innerHTML || '';
+    }
+
     window.chatStoryFetchResponse = function(options) {
         var requestId = options && options.requestId || 0;
         try {
@@ -31,6 +39,7 @@
                 requestId: requestId,
                 ok: true,
                 text: text,
+                html: htmlOf(last),
                 message: text ? 'Response fetched' : 'No assistant response found in DOM'
             });
         } catch (e) {

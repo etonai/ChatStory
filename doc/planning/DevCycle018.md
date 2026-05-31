@@ -1,6 +1,6 @@
 # DevCycle 018: Right Panel Navigation
 
-**Status:** In Progress
+**Status:** Verified
 **Start Date:** 2026-05-31
 **Target Completion:** TBD
 **Focus:** Make the right panel easier to navigate and improve response readability with markdown rendering.
@@ -52,7 +52,8 @@ At the end of DevCycle 018:
 - [x] Add `Ctrl+Shift+S` to trigger Send (submit the current input prompt). Added `triggerSend()` to `InputPanel`; wired via `inputPanel::triggerSend` in `AppFrame`.
 - [x] Add `Ctrl+Shift+C` to trigger Send Context. Added `triggerSendContext()` to `MainPanel`; wired via `mainPanel::triggerSendContext` in `AppFrame`.
 - [x] Add `Ctrl+Shift+B` to focus the browser window for scrolling. Calls `browser.setFocus(true)` then `document.activeElement.blur()` via JS so the browser receives scroll events without focusing the ChatGPT text input.
-- [x] Add `Ctrl+Shift+W` to focus the input area (originally `Ctrl+Shift+I`, changed as that binding was already taken). Added `focusInput()` to `InputPanel`; wired via `inputPanel::focusInput` in `AppFrame`.
+- [x] Add `Ctrl+Shift+W` to focus the response window for scrolling. Added `focusResponse()` to `OutputPanel` and `LeftPanePanel`.
+- [x] Add `Ctrl+Shift+I` to focus the input area. Added `focusInput()` to `InputPanel`; wired via `inputPanel::focusInput` in `AppFrame`.
 - [x] Document all shortcuts in `README.md` under a **Keyboard Shortcuts** section.
 
 **Technical Notes:**
@@ -65,17 +66,17 @@ At the end of DevCycle 018:
 
 ### Phase 3: Markdown Rendering in the Response Window
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Add `commonmark-java` to `build.gradle.kts`: `implementation("org.commonmark:commonmark:0.24.0")`.
-- [ ] In `OutputPanel.java`, replace the `JTextArea` with a `JEditorPane` configured for `"text/html"` content type.
-- [ ] Add a `private String currentMarkdown` field to store the raw markdown text received from the AI.
-- [ ] Write a private `toHtml(String markdown)` helper that converts markdown to an HTML string using commonmark's `Parser` and `HtmlRenderer`, wrapped in a minimal `<html><body>` envelope with a base font style that matches the rest of the app.
-- [ ] Update `setResponse(String text)` and `setResponse(String text, int beatNumber)` to store the raw text in `currentMarkdown` and call `editorPane.setText(toHtml(text))`.
-- [ ] Update the **Copy** button to copy `currentMarkdown` (the raw markdown), not the rendered HTML.
-- [ ] Update the **Add to Canon** action to pass `currentMarkdown` to `canonStore.add(...)`.
-- [ ] Update the right-click correction menu to use `editorPane.getSelectedText()` for the selection (same API as `JTextArea`).
-- [ ] Make the `JEditorPane` non-editable (`setEditable(false)`) — the text is AI-generated and corrections go through the correction menu, not direct edits.
+- [x] Add `commonmark-java` to `build.gradle.kts`: `implementation("org.commonmark:commonmark:0.24.0")`.
+- [x] In `OutputPanel.java`, replace the `JTextArea` with a `JEditorPane` configured for `"text/html"` content type.
+- [x] Add a `private String currentMarkdown` field to store the raw markdown text received from the AI.
+- [x] Write a private `toHtml(String markdown)` helper that converts markdown to an HTML string using commonmark's `Parser` and `HtmlRenderer`, wrapped in a minimal `<html><body>` envelope with a base font style that matches the rest of the app.
+- [x] Update `setResponse(String text)` and `setResponse(String text, int beatNumber)` to store the raw text in `currentMarkdown` and call `editorPane.setText(toHtml(text))`.
+- [x] Update the **Copy** button to copy `currentMarkdown` (the raw markdown), not the rendered HTML.
+- [x] Update the **Add to Canon** action to pass `currentMarkdown` to `canonStore.add(...)`.
+- [x] Update the right-click correction menu to use `editorPane.getSelectedText()` for the selection (same API as `JTextArea`).
+- [x] Make the `JEditorPane` non-editable (`setEditable(false)`) — the text is AI-generated and corrections go through the correction menu, not direct edits.
 
 **Technical Notes:**
 

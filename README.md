@@ -48,7 +48,8 @@ These shortcuts work globally from anywhere in the app.
 | `Ctrl+Shift+S` | Send the current input |
 | `Ctrl+Shift+C` | Send Context |
 | `Ctrl+Shift+B` | Focus the browser window (for scrolling) |
-| `Ctrl+Shift+W` | Focus the input area |
+| `Ctrl+Shift+W` | Focus the response window (for scrolling) |
+| `Ctrl+Shift+I` | Focus the input area |
 | `Ctrl+Shift+R` | Redo |
 | `Ctrl+Shift+F` | Fetch (force-read the current response from the browser) |
 | `Ctrl+Shift+X` | Reset (force app state back to Ready) |

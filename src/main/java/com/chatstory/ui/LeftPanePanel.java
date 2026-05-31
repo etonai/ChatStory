@@ -47,7 +47,7 @@ public class LeftPanePanel extends JPanel {
         outputPanel.setResponse(text);
     }
 
-    public void onResponseComplete(String text) {
+    public void onResponseComplete(String text, String html) {
         if (modeModel.current() != AppMode.STORY) return;
         OptionalInt parsed = BeatParser.parse(text);
         if (!parsed.isPresent()) return;
@@ -55,7 +55,15 @@ public class LeftPanePanel extends JPanel {
         if (result.kind == CurrentBeatModel.ResultKind.ROLLED_OVER) {
             canonPanel.appendEntry(result.textToAppend);
         }
-        outputPanel.setResponse(text, parsed.getAsInt());
+        outputPanel.setResponse(text, html, parsed.getAsInt());
+    }
+
+    public void onResponseComplete(String text) {
+        onResponseComplete(text, null);
+    }
+
+    public void focusResponse() {
+        outputPanel.focusResponse();
     }
 
     public void clearResponse() {

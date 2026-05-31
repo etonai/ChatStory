@@ -19,15 +19,17 @@ public final class BridgeMessage {
     private final long requestId;
     private final boolean ok;
     private final String text;
+    private final String html;
     private final String errorCode;
     private final String message;
 
     private BridgeMessage(String type, long requestId, boolean ok,
-                          String text, String errorCode, String message) {
+                          String text, String html, String errorCode, String message) {
         this.type = type;
         this.requestId = requestId;
         this.ok = ok;
         this.text = text;
+        this.html = html;
         this.errorCode = errorCode;
         this.message = message;
     }
@@ -64,10 +66,11 @@ public final class BridgeMessage {
             }
 
             String text      = getString(obj, "text");
+            String html      = getString(obj, "html");
             String errorCode = getString(obj, "errorCode");
             String message   = getString(obj, "message");
 
-            return new BridgeMessage(type, requestId, ok, text, errorCode, message);
+            return new BridgeMessage(type, requestId, ok, text, html, errorCode, message);
 
         } catch (BridgeMessageException e) {
             throw e;
@@ -86,6 +89,7 @@ public final class BridgeMessage {
     public long   getRequestId() { return requestId; }
     public boolean isOk()        { return ok; }
     public String getText()      { return text; }
+    public String getHtml()      { return html; }
     public String getErrorCode() { return errorCode; }
     public String getMessage()   { return message; }
 

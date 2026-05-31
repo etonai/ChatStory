@@ -49,7 +49,8 @@ public class NativeThemeApplier {
         if (component == null) return;
 
         Colors colors = colors(theme);
-        if (component instanceof JTextArea || component instanceof JTextField) {
+        if (component instanceof JTextArea || component instanceof JTextField
+                || component instanceof JEditorPane) {
             component.setBackground(colors.field);
             component.setForeground(colors.text);
         } else if (component instanceof AbstractButton) {

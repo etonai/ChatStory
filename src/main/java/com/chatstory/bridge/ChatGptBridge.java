@@ -17,7 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 public class ChatGptBridge implements ChatBridge {
 
@@ -51,7 +51,7 @@ public class ChatGptBridge implements ChatBridge {
     private String sendScript;
     private String extractScript;
     private String fetchScript;
-    private volatile Consumer<String> manualFetchCallback;
+    private volatile BiConsumer<String, String> manualFetchCallback;
     private JsonObject selectors;
 
     public ChatGptBridge(DomBridge domBridge, CefBrowser browser, AppState appState) {
@@ -109,7 +109,7 @@ public class ChatGptBridge implements ChatBridge {
         });
     }
 
-    public void fetchLatestResponse(Consumer<String> onResult) {
+    public void fetchLatestResponse(BiConsumer<String, String> onResult) {
         manualFetchCallback = onResult;
         JsonObject options = new JsonObject();
         options.addProperty("requestId", 0L);
@@ -117,12 +117,13 @@ public class ChatGptBridge implements ChatBridge {
     }
 
     private void handleManualFetch(BridgeMessage message, org.cef.callback.CefQueryCallback callback) {
-        Consumer<String> cb = manualFetchCallback;
+        BiConsumer<String, String> cb = manualFetchCallback;
         manualFetchCallback = null;
         callback.success("");
         if (cb != null) {
             String text = message.isOk() && message.getText() != null ? message.getText() : "";
-            cb.accept(text);
+            String html = message.isOk() && message.getHtml() != null ? message.getHtml() : "";
+            cb.accept(text, html);
         }
     }
 
@@ -273,7 +274,7 @@ public class ChatGptBridge implements ChatBridge {
         }
         appState.transition(AppState.State.Complete);
         if (listener != null) {
-            listener.onResponseComplete(message.getRequestId(), message.getText());
+            listener.onResponseComplete(message.getRequestId(), message.getText(), message.getHtml());
         }
         callback.success("");
     }

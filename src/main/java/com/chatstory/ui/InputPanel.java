@@ -177,8 +177,8 @@ public class InputPanel extends JPanel {
             }
 
             @Override
-            public void onResponseComplete(long requestId, String responseText) {
-                listener.onResponseComplete(requestId, responseText);
+            public void onResponseComplete(long requestId, String responseText, String responseHtml) {
+                listener.onResponseComplete(requestId, responseText, responseHtml);
             }
 
             @Override

@@ -85,9 +85,9 @@ public class AppFrame extends JFrame {
 
         Runnable onFetch = () -> {
             chatBridge.reset();
-            chatBridge.fetchLatestResponse(text -> {
+            chatBridge.fetchLatestResponse((text, html) -> {
                 if (text != null && !text.isBlank()) {
-                    leftPane.onResponseComplete(text);
+                    leftPane.onResponseComplete(text, html);
                     UiThread.run(() -> statusLabel.setText(" Response fetched"));
                 } else {
                     UiThread.run(() -> statusLabel.setText(" No response found in browser"));
@@ -184,7 +184,8 @@ public class AppFrame extends JFrame {
         browserShortcuts.put(KeyEvent.VK_S, inputPanel::triggerSend);
         browserShortcuts.put(KeyEvent.VK_C, mainPanel::triggerSendContext);
         browserShortcuts.put(KeyEvent.VK_B, onFocusBrowser);
-        browserShortcuts.put(KeyEvent.VK_W, inputPanel::focusInput);
+        browserShortcuts.put(KeyEvent.VK_W, leftPane::focusResponse);
+        browserShortcuts.put(KeyEvent.VK_I, inputPanel::focusInput);
 
         installKeyboardShortcuts(browserShortcuts);
 
@@ -232,8 +233,8 @@ public class AppFrame extends JFrame {
             }
 
             @Override
-            public void onResponseComplete(long requestId, String responseText) {
-                leftPane.onResponseComplete(responseText);
+            public void onResponseComplete(long requestId, String responseText, String responseHtml) {
+                leftPane.onResponseComplete(responseText, responseHtml);
                 UiThread.run(() -> statusLabel.setText(" Response complete"));
             }
 
