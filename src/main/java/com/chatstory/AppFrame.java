@@ -4,6 +4,7 @@ import com.chatstory.bridge.ChatGptBridge;
 import com.chatstory.bridge.CorrectionType;
 import com.chatstory.bridge.ResponseListener;
 import com.chatstory.canon.CanonFolderStore;
+import com.chatstory.picture.PictureFileStore;
 import com.chatstory.browser.BrowserContextMenuHandler;
 import com.chatstory.browser.BrowserPanel;
 import com.chatstory.canon.CanonStore;
@@ -23,6 +24,7 @@ import com.chatstory.ui.InputPanel;
 import com.chatstory.ui.LeftPanePanel;
 import com.chatstory.ui.MainPanel;
 import com.chatstory.ui.ParsePreviewPanel;
+import com.chatstory.ui.PicturePanel;
 import com.chatstory.ui.RulesPanel;
 import org.cef.browser.CefBrowser;
 
@@ -44,6 +46,7 @@ public class AppFrame extends JFrame {
     public AppFrame(AppState appState, BrowserPanel browserPanel, CefBrowser browser,
                     ChatGptBridge chatBridge, CefClient client,
                     ContextFileStore contextFileStore, CanonFolderStore canonFolderStore,
+                    PictureFileStore pictureFileStore,
                     SessionControllerStore sessionControllerStore,
                     IntermediateControllerStore intermediateControllerStore,
                     FinalControllerStore finalControllerStore,
@@ -108,6 +111,7 @@ public class AppFrame extends JFrame {
         rightTabs.addTab("Parsed Input", parsePreviewPanel);
         rightTabs.addTab("Context", new ContextPanel(contextFileStore));
         rightTabs.addTab("Rules", new RulesPanel(rulesFileStore));
+        rightTabs.addTab("Picture", new PicturePanel(pictureFileStore));
 
         JButton devToolsBtn = new JButton("DevTools");
         devToolsBtn.setToolTipText("Open Chromium DevTools for this page");

@@ -24,6 +24,7 @@ public final class AppConfig {
     private final String intermediateControllerConfigPath;
     private final String finalControllerConfigPath;
     private final String rulesFileListPath;
+    private final String pictureConfigPath;
 
     public AppConfig() {
         String localAppData = System.getenv("LOCALAPPDATA");
@@ -50,6 +51,7 @@ public final class AppConfig {
         intermediateControllerConfigPath = new File(appRoamDir, "intermediate-controller.json").getAbsolutePath();
         finalControllerConfigPath        = new File(appRoamDir, "final-controller.json").getAbsolutePath();
         rulesFileListPath                = new File(appRoamDir, "rules-files.json").getAbsolutePath();
+        pictureConfigPath                = new File(appRoamDir, "picture-config.json").getAbsolutePath();
 
         // Create application directories now so JCEF and config reads don't fail
         ensureDir(appLocalDir);
@@ -99,4 +101,5 @@ public final class AppConfig {
     public String getIntermediateControllerConfigPath() { return intermediateControllerConfigPath; }
     public String getFinalControllerConfigPath()        { return finalControllerConfigPath; }
     public String getRulesFileListPath()                { return rulesFileListPath; }
+    public String getPictureConfigPath()                { return pictureConfigPath; }
 }

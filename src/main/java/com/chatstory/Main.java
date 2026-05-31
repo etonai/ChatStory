@@ -6,6 +6,7 @@ import com.chatstory.browser.DomBridge;
 import com.chatstory.bridge.ChatGptBridge;
 import com.chatstory.config.AppConfig;
 import com.chatstory.canon.CanonFolderStore;
+import com.chatstory.picture.PictureFileStore;
 import com.chatstory.context.ContextFileStore;
 import com.chatstory.controller.FinalControllerStore;
 import com.chatstory.controller.IntermediateControllerStore;
@@ -29,6 +30,7 @@ public class Main {
         ContextFileStore contextFileStore = new ContextFileStore(
                 config.getContextFileListPath(), config.getStagingFolderPath());
         CanonFolderStore canonFolderStore = new CanonFolderStore(config.getCanonConfigPath());
+        PictureFileStore pictureFileStore = new PictureFileStore(config.getPictureConfigPath());
         SessionControllerStore sessionControllerStore =
                 new SessionControllerStore(config.getSessionControllerConfigPath());
         IntermediateControllerStore intermediateControllerStore =
@@ -78,7 +80,7 @@ public class Main {
 
         SwingUtilities.invokeLater(() ->
                 new AppFrame(appState, browserPanel, browser, chatBridge, client,
-                        contextFileStore, canonFolderStore,
+                        contextFileStore, canonFolderStore, pictureFileStore,
                         sessionControllerStore, intermediateControllerStore, finalControllerStore, rulesFileStore));
     }
 }
