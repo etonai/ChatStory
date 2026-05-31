@@ -107,11 +107,11 @@ public class AppFrame extends JFrame {
 
         JTabbedPane rightTabs = new JTabbedPane();
         rightTabs.addTab("MAIN", mainPanel);
-        rightTabs.addTab("Configuration", new ConfigurationPanel(modeModel, themeModel, contextFileStore, canonFolderStore));
-        rightTabs.addTab("Parsed Input", parsePreviewPanel);
+        rightTabs.addTab("Picture", new PicturePanel(pictureFileStore));
         rightTabs.addTab("Context", new ContextPanel(contextFileStore));
         rightTabs.addTab("Rules", new RulesPanel(rulesFileStore));
-        rightTabs.addTab("Picture", new PicturePanel(pictureFileStore));
+        rightTabs.addTab("Parsed Input", parsePreviewPanel);
+        rightTabs.addTab("Configuration", new ConfigurationPanel(modeModel, themeModel, contextFileStore, canonFolderStore));
 
         JButton devToolsBtn = new JButton("DevTools");
         devToolsBtn.setToolTipText("Open Chromium DevTools for this page");
@@ -144,12 +144,14 @@ public class AppFrame extends JFrame {
                 browserAndRight);
         mainSplit.setResizeWeight(0.22);
 
+        InputPanel inputPanel = new InputPanel(appState, modeModel, chatBridge,
+                statusResponseListener("Prompt submitted"),
+                () -> browser.setFocus(false),
+                parsePreviewPanel::setSegments);
+
         add(toolbar, BorderLayout.NORTH);
         add(mainSplit, BorderLayout.CENTER);
-        add(new InputPanel(appState, modeModel, chatBridge, statusResponseListener("Prompt submitted"),
-                        () -> browser.setFocus(false),
-                        parsePreviewPanel::setSegments),
-                BorderLayout.SOUTH);
+        add(inputPanel, BorderLayout.SOUTH);
 
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
@@ -162,25 +164,32 @@ public class AppFrame extends JFrame {
 
         appState.addListener((prev, current) ->
                 UiThread.run(() -> statusLabel.setText(" " + labelFor(current))));
-modeModel.addListener((prev, current) ->
+        modeModel.addListener((prev, current) ->
                 UiThread.run(() -> statusLabel.setText(" " + labelFor(appState.current()))));
         themeModel.addListener((prev, current) ->
                 UiThread.run(() -> themeApplier.apply(this, current)));
 
-        installKeyboardShortcuts(onReset, onRedo, onFetch);
+        installKeyboardShortcuts(rightTabs, onReset, onRedo, onFetch, inputPanel::triggerSend, mainPanel::triggerSendContext);
 
         setVisible(true);
         UiThread.run(() -> themeApplier.apply(this, themeModel.current()));
     }
 
-    private void installKeyboardShortcuts(Runnable onReset, Runnable onRedo, Runnable onFetch) {
+    private void installKeyboardShortcuts(JTabbedPane rightTabs,
+                                          Runnable onReset, Runnable onRedo, Runnable onFetch,
+                                          Runnable onSend, Runnable onSendContext) {
+        int ctrlShift = InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK;
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
             if (e.getID() != KeyEvent.KEY_PRESSED) return false;
-            if ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) == 0) return false;
+            if ((e.getModifiersEx() & ctrlShift) != ctrlShift) return false;
             switch (e.getKeyCode()) {
+                case KeyEvent.VK_M: UiThread.run(() -> rightTabs.setSelectedIndex(0)); return true;
+                case KeyEvent.VK_P: UiThread.run(() -> rightTabs.setSelectedIndex(1)); return true;
                 case KeyEvent.VK_X: onReset.run(); return true;
                 case KeyEvent.VK_R: onRedo.run(); return true;
                 case KeyEvent.VK_F: onFetch.run(); return true;
+                case KeyEvent.VK_S: onSend.run(); return true;
+                case KeyEvent.VK_C: onSendContext.run(); return true;
                 default: return false;
             }
         });

@@ -37,10 +37,32 @@ gradlew.bat run
 
 On first run, ~100 MB of Chromium native binaries are downloaded automatically.
 
+## Keyboard Shortcuts
+
+These shortcuts work globally from anywhere in the app.
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Shift+M` | Switch to the Main tab |
+| `Ctrl+Shift+P` | Switch to the Picture tab |
+| `Ctrl+Shift+S` | Send the current input |
+| `Ctrl+Shift+C` | Send Context |
+| `Ctrl+Shift+R` | Redo |
+| `Ctrl+Shift+F` | Fetch (force-read the current response from the browser) |
+| `Ctrl+Shift+X` | Reset (force app state back to Ready) |
+
 ## Planning
 
 See `doc/planning/` for active DevCycle documents.
 See `doc/planning/ideas/` for the MVP implementation plan (`ClaudePlan03.md`).
+
+## Known Issues
+
+- **Hang on scroll after send** — The application can hang if the user scrolls in the browser window immediately after sending a prompt. This appears to be a conflict between the browser's scroll handling and the response-reading or UI-update pipeline. Workaround: avoid scrolling in the browser while a response is in progress.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
 
 ## AI-Assisted Development Notes
 

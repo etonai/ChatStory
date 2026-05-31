@@ -93,8 +93,12 @@ public class ChatGptBridge implements ChatBridge {
         browser.setFocus(true);
         Thread.ofVirtual().start(() -> {
             try {
-                Thread.sleep(100); // let focus settle before sending keystrokes
+                Thread.sleep(200); // let focus settle before sending keystrokes
                 Robot robot = new Robot();
+                // release any modifier keys the user may still be holding
+                robot.keyRelease(KeyEvent.VK_SHIFT);
+                robot.keyRelease(KeyEvent.VK_CONTROL);
+                robot.keyRelease(KeyEvent.VK_ALT);
                 robot.keyPress(KeyEvent.VK_CONTROL);
                 robot.keyPress(KeyEvent.VK_U);
                 robot.keyRelease(KeyEvent.VK_U);

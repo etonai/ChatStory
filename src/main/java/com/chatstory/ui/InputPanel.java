@@ -32,6 +32,7 @@ public class InputPanel extends JPanel {
     private final SceneInputParser parser = new SceneInputParser();
     private final ScenePromptBuilder promptBuilder = new ScenePromptBuilder();
     private final Consumer<List<SceneInputSegment>> previewConsumer;
+    private ResponseListener responseListener;
 
     public InputPanel(AppState appState, ChatBridge chatBridge, ResponseListener listener) {
         this(appState, new AppModeModel(), chatBridge, listener, () -> {}, segments -> {});
@@ -81,6 +82,7 @@ public class InputPanel extends JPanel {
         add(actions, BorderLayout.EAST);
         installFocusRecovery(scrollPane);
 
+        this.responseListener = listener;
         sendButton.addActionListener(e -> send(listener));
         textArea.getDocument().addDocumentListener(new DocumentListener() {
             @Override public void insertUpdate(DocumentEvent e) { refreshInputState(); }
@@ -189,6 +191,10 @@ public class InputPanel extends JPanel {
         } else {
             sender.sendRawPrompt(prompt, wrappedListener);
         }
+    }
+
+    public void triggerSend() {
+        if (sendButton.isEnabled()) send(responseListener);
     }
 
     private void refreshInputState() {

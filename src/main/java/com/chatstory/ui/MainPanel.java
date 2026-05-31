@@ -466,6 +466,10 @@ public class MainPanel extends JPanel {
         return panel;
     }
 
+    public void triggerSendContext() {
+        sendContext();
+    }
+
     private void sendContext() {
         List<Path> files = contextFileStore.getCheckedEntries();
         if (files.isEmpty()) return;
