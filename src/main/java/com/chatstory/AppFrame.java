@@ -33,6 +33,7 @@ import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
+import java.util.Map;
 import java.awt.event.WindowEvent;
 
 public class AppFrame extends JFrame {
@@ -50,7 +51,8 @@ public class AppFrame extends JFrame {
                     SessionControllerStore sessionControllerStore,
                     IntermediateControllerStore intermediateControllerStore,
                     FinalControllerStore finalControllerStore,
-                    RulesFileStore rulesFileStore) {
+                    RulesFileStore rulesFileStore,
+                    Map<Integer, Runnable> browserShortcuts) {
         super("Story Workstation");
 
         setSize(1400, 900);
@@ -169,29 +171,36 @@ public class AppFrame extends JFrame {
         themeModel.addListener((prev, current) ->
                 UiThread.run(() -> themeApplier.apply(this, current)));
 
-        installKeyboardShortcuts(rightTabs, onReset, onRedo, onFetch, inputPanel::triggerSend, mainPanel::triggerSendContext);
+        Runnable onFocusBrowser = () -> {
+            browser.setFocus(true);
+            browser.executeJavaScript("document.activeElement.blur();", browser.getURL(), 0);
+        };
+
+        browserShortcuts.put(KeyEvent.VK_M, () -> rightTabs.setSelectedIndex(0));
+        browserShortcuts.put(KeyEvent.VK_P, () -> rightTabs.setSelectedIndex(1));
+        browserShortcuts.put(KeyEvent.VK_X, onReset);
+        browserShortcuts.put(KeyEvent.VK_R, onRedo);
+        browserShortcuts.put(KeyEvent.VK_F, onFetch);
+        browserShortcuts.put(KeyEvent.VK_S, inputPanel::triggerSend);
+        browserShortcuts.put(KeyEvent.VK_C, mainPanel::triggerSendContext);
+        browserShortcuts.put(KeyEvent.VK_B, onFocusBrowser);
+        browserShortcuts.put(KeyEvent.VK_W, inputPanel::focusInput);
+
+        installKeyboardShortcuts(browserShortcuts);
 
         setVisible(true);
         UiThread.run(() -> themeApplier.apply(this, themeModel.current()));
     }
 
-    private void installKeyboardShortcuts(JTabbedPane rightTabs,
-                                          Runnable onReset, Runnable onRedo, Runnable onFetch,
-                                          Runnable onSend, Runnable onSendContext) {
+    private void installKeyboardShortcuts(Map<Integer, Runnable> shortcuts) {
         int ctrlShift = InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK;
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
             if (e.getID() != KeyEvent.KEY_PRESSED) return false;
             if ((e.getModifiersEx() & ctrlShift) != ctrlShift) return false;
-            switch (e.getKeyCode()) {
-                case KeyEvent.VK_M: UiThread.run(() -> rightTabs.setSelectedIndex(0)); return true;
-                case KeyEvent.VK_P: UiThread.run(() -> rightTabs.setSelectedIndex(1)); return true;
-                case KeyEvent.VK_X: onReset.run(); return true;
-                case KeyEvent.VK_R: onRedo.run(); return true;
-                case KeyEvent.VK_F: onFetch.run(); return true;
-                case KeyEvent.VK_S: onSend.run(); return true;
-                case KeyEvent.VK_C: onSendContext.run(); return true;
-                default: return false;
-            }
+            Runnable action = shortcuts.get(e.getKeyCode());
+            if (action == null) return false;
+            action.run();
+            return true;
         });
     }
 

@@ -193,6 +193,10 @@ public class InputPanel extends JPanel {
         }
     }
 
+    public void focusInput() {
+        requestInputFocus();
+    }
+
     public void triggerSend() {
         if (sendButton.isEnabled()) send(responseListener);
     }

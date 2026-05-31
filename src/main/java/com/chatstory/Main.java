@@ -1,6 +1,7 @@
 package com.chatstory;
 
 import com.chatstory.browser.BrowserClient;
+import com.chatstory.browser.BrowserKeyboardHandler;
 import com.chatstory.browser.BrowserPanel;
 import com.chatstory.browser.DomBridge;
 import com.chatstory.bridge.ChatGptBridge;
@@ -20,6 +21,8 @@ import org.cef.browser.CefBrowser;
 
 import javax.swing.*;
 import java.io.File;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Main {
 
@@ -74,6 +77,10 @@ public class Main {
         BrowserClient browserClient = new BrowserClient(appState, domBridge);
         client.addLoadHandler(browserClient);
 
+        // Register keyboard handler before createBrowser so JCEF wires the native callback
+        Map<Integer, Runnable> browserShortcuts = new ConcurrentHashMap<>();
+        client.addKeyboardHandler(new BrowserKeyboardHandler(browserShortcuts));
+
         CefBrowser   browser     = client.createBrowser(config.getTargetUrl(), false, false);
         BrowserPanel browserPanel = new BrowserPanel(browser);
         ChatGptBridge chatBridge = new ChatGptBridge(domBridge, browser, appState);
@@ -81,6 +88,7 @@ public class Main {
         SwingUtilities.invokeLater(() ->
                 new AppFrame(appState, browserPanel, browser, chatBridge, client,
                         contextFileStore, canonFolderStore, pictureFileStore,
-                        sessionControllerStore, intermediateControllerStore, finalControllerStore, rulesFileStore));
+                        sessionControllerStore, intermediateControllerStore, finalControllerStore,
+                        rulesFileStore, browserShortcuts));
     }
 }

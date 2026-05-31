@@ -47,6 +47,8 @@ These shortcuts work globally from anywhere in the app.
 | `Ctrl+Shift+P` | Switch to the Picture tab |
 | `Ctrl+Shift+S` | Send the current input |
 | `Ctrl+Shift+C` | Send Context |
+| `Ctrl+Shift+B` | Focus the browser window (for scrolling) |
+| `Ctrl+Shift+W` | Focus the input area |
 | `Ctrl+Shift+R` | Redo |
 | `Ctrl+Shift+F` | Fetch (force-read the current response from the browser) |
 | `Ctrl+Shift+X` | Reset (force app state back to Ready) |
@@ -59,6 +61,8 @@ See `doc/planning/ideas/` for the MVP implementation plan (`ClaudePlan03.md`).
 ## Known Issues
 
 - **Hang on scroll after send** — The application can hang if the user scrolls in the browser window immediately after sending a prompt. This appears to be a conflict between the browser's scroll handling and the response-reading or UI-update pipeline. Workaround: avoid scrolling in the browser while a response is in progress.
+
+- **Shortcuts don't work when browser has focus** — The embedded browser runs as a native Windows window. Keyboard events inside it bypass Java's event system entirely, so none of the `Ctrl+Shift` shortcuts function while the browser has focus. `Ctrl+Shift+B` deliberately moves focus into the browser (useful for keyboard scrolling), but this traps the user — no shortcuts will work until focus returns to a Swing component. Click anywhere outside the browser (e.g. the input area) or press `Ctrl+Shift+W` with the mouse to regain Swing focus and restore shortcuts.
 
 ## License
 
