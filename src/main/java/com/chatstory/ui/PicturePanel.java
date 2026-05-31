@@ -12,11 +12,21 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class PicturePanel extends JPanel {
 
+    private static final Set<String> SUPPORTED_EXTENSIONS = Set.of("png", "jpg", "jpeg");
+
     private final PictureFileStore pictureFileStore;
     private final JTextField fileNameField = new JTextField();
+    private final JButton prevButton = new JButton("Prev");
+    private final JButton nextButton = new JButton("Next");
     private final ImageDisplayPanel imageDisplay = new ImageDisplayPanel();
 
     public PicturePanel(PictureFileStore pictureFileStore) {
@@ -32,6 +42,7 @@ public class PicturePanel extends JPanel {
             fileNameField.setText(saved.getFileName().toString());
             loadImage(saved);
         }
+        refreshNavButtons();
     }
 
     private JPanel buildFileSection() {
@@ -46,6 +57,12 @@ public class PicturePanel extends JPanel {
         JButton browseButton = new JButton("Browse...");
         browseButton.addActionListener(e -> browseForImage());
 
+        prevButton.setEnabled(false);
+        prevButton.addActionListener(e -> navigateTo(-1));
+
+        nextButton.setEnabled(false);
+        nextButton.addActionListener(e -> navigateTo(1));
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(4, 4, 4, 4);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -55,6 +72,12 @@ public class PicturePanel extends JPanel {
 
         gbc.gridx = 1; gbc.weightx = 0;
         panel.add(browseButton, gbc);
+
+        gbc.gridx = 2;
+        panel.add(prevButton, gbc);
+
+        gbc.gridx = 3;
+        panel.add(nextButton, gbc);
 
         return panel;
     }
@@ -81,10 +104,31 @@ public class PicturePanel extends JPanel {
         if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
 
         File selected = chooser.getSelectedFile();
-        Path path = selected.toPath();
+        selectFile(selected.toPath());
+    }
+
+    private void navigateTo(int delta) {
+        Path current = pictureFileStore.getImageFile();
+        if (current == null) return;
+
+        List<Path> siblings = listSiblingImages(current.getParent());
+        if (siblings.isEmpty()) return;
+
+        int idx = siblings.indexOf(current);
+        if (idx < 0) {
+            idx = 0;
+        } else {
+            idx = Math.floorMod(idx + delta, siblings.size());
+        }
+
+        selectFile(siblings.get(idx));
+    }
+
+    private void selectFile(Path path) {
         pictureFileStore.setImageFile(path);
         fileNameField.setText(path.getFileName().toString());
         loadImage(path);
+        refreshNavButtons();
     }
 
     private void loadImage(Path path) {
@@ -97,6 +141,27 @@ public class PicturePanel extends JPanel {
                     "Could not load image:\n" + e.getMessage(),
                     "Image Load Failed",
                     JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void refreshNavButtons() {
+        boolean hasFile = pictureFileStore.getImageFile() != null;
+        prevButton.setEnabled(hasFile);
+        nextButton.setEnabled(hasFile);
+    }
+
+    private static List<Path> listSiblingImages(Path directory) {
+        try (Stream<Path> stream = Files.list(directory)) {
+            return stream
+                    .filter(p -> {
+                        String name = p.getFileName().toString().toLowerCase(Locale.ROOT);
+                        int dot = name.lastIndexOf('.');
+                        return dot >= 0 && SUPPORTED_EXTENSIONS.contains(name.substring(dot + 1));
+                    })
+                    .sorted(Comparator.comparing(p -> p.getFileName().toString().toLowerCase(Locale.ROOT)))
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            return List.of();
         }
     }
 

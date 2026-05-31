@@ -20,6 +20,9 @@ At the end of DevCycle 017:
 - Clicking Browse opens a file chooser filtered to `.png` and `.jpg`/`.jpeg` files only.
 - The **Image** section displays the selected image, scaled to fit the available space.
 - If no file is selected the image section is empty.
+- **Next** and **Prev** buttons in the File section navigate to the next or previous PNG/JPG file in the same directory, sorted alphabetically.
+- Navigation wraps: Prev on the first file goes to the last; Next on the last goes to the first.
+- Next and Prev are disabled when no file is loaded.
 - All existing tabs and workflows continue to function.
 
 ---
@@ -44,6 +47,20 @@ At the end of DevCycle 017:
 - The file chooser filter: use `FileNameExtensionFilter("PNG and JPG images", "png", "jpg", "jpeg")` from `javax.swing.filechooser`.
 - Display only the **file name** (not the full path) in the filename field, but keep the full `Path` internally for loading.
 - `PictureFolderStore` stores the selected image file path to a JSON config file using Gson, the same way `CanonFolderStore` (`src/main/java/com/chatstory/canon/CanonFolderStore.java`) does. On startup, `PicturePanel` reads the persisted path and loads the image automatically if the file still exists.
+
+### Phase 2: Next / Prev Navigation
+
+**Status:** Work Complete
+
+- [x] Add **Prev** and **Next** buttons to the File section in `PicturePanel`, placed to the right of the Browse button.
+- [x] On click, list all `.png`/`.jpg`/`.jpeg` files in the current file's directory, sort alphabetically, find the current file's index, and step ±1 with wraparound.
+- [x] Disable both buttons when no file is loaded; enable them once a file is selected.
+
+**Technical Notes:**
+
+- Use `Files.list(parent)` filtered by extension and sorted by filename (case-insensitive) to build the sibling list.
+- Buttons start disabled; call `refreshNavButtons()` after any file change (browse, next, prev, startup load).
+- Keep the nav logic in a private helper `navigateTo(int delta)` to avoid duplication between Next and Prev.
 
 ---
 
