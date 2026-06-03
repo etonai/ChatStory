@@ -5,6 +5,7 @@ import com.chatstory.controller.FinalControllerStore;
 import com.chatstory.controller.IntermediateControllerStore;
 import com.chatstory.controller.SessionControllerStore;
 import com.chatstory.rules.RulesFileStore;
+import com.chatstory.session.RedoCountStore;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -24,6 +25,7 @@ public class MainPanel extends JPanel {
     private final FinalControllerStore finalControllerStore;
     private final RulesFileStore rulesFileStore;
     private final ContextFileStore contextFileStore;
+    private final RedoCountStore redoCountStore;
     private final Consumer<String> onSendPrompt;
     private final Runnable onClickUpload;
     private final Runnable onRedo;
@@ -32,6 +34,8 @@ public class MainPanel extends JPanel {
     private final Runnable onReset;
     private final Runnable onFetch;
     private final Runnable onEndSession;
+
+    private JButton redoBtn;
 
     private final JTextField controllerPathField = new JTextField();
     private final JButton sendControllerButton = new JButton("Send Controller");
@@ -49,6 +53,7 @@ public class MainPanel extends JPanel {
                      FinalControllerStore finalControllerStore,
                      RulesFileStore rulesFileStore,
                      ContextFileStore contextFileStore,
+                     RedoCountStore redoCountStore,
                      Consumer<String> onSendPrompt,
                      Runnable onClickUpload,
                      Runnable onRedo,
@@ -66,6 +71,7 @@ public class MainPanel extends JPanel {
         this.finalControllerStore = finalControllerStore;
         this.rulesFileStore = rulesFileStore;
         this.contextFileStore = contextFileStore;
+        this.redoCountStore = redoCountStore;
         this.onSendPrompt = onSendPrompt;
         this.onClickUpload = onClickUpload;
         this.onRedo = onRedo;
@@ -86,6 +92,8 @@ public class MainPanel extends JPanel {
         add(buildFinalControllerSection());
         add(Box.createVerticalStrut(8));
         add(buildCommandsSection());
+        add(Box.createVerticalStrut(8));
+        add(buildEndSessionSection());
         add(Box.createVerticalGlue());
 
         refreshControllerPath();
@@ -366,6 +374,8 @@ public class MainPanel extends JPanel {
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
+        redoCountStore.setCount(0);
+        updateRedoLabel();
         onSendPrompt.accept(content);
     }
 
@@ -421,11 +431,15 @@ public class MainPanel extends JPanel {
         panel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createEtchedBorder(), "Commands",
                 TitledBorder.LEFT, TitledBorder.TOP));
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height + 80));
+        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height + 60));
 
-        JButton redoBtn = new JButton("Redo");
+        redoBtn = new JButton("Redo " + redoCountStore.getCount());
         redoBtn.setToolTipText("Redo the last story beat");
-        redoBtn.addActionListener(e -> onRedo.run());
+        redoBtn.addActionListener(e -> {
+            redoCountStore.setCount(redoCountStore.getCount() + 1);
+            updateRedoLabel();
+            onRedo.run();
+        });
 
         JButton continueBtn = new JButton("Continue");
         continueBtn.setToolTipText("Continue the scene");
@@ -443,27 +457,37 @@ public class MainPanel extends JPanel {
         fetchBtn.setToolTipText("Force-read the current response from the browser");
         fetchBtn.addActionListener(e -> onFetch.run());
 
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));
+        row.setOpaque(false);
+        row.add(redoBtn);
+        row.add(continueBtn);
+        row.add(endSceneBtn);
+        row.add(resetBtn);
+        row.add(fetchBtn);
+
+        panel.add(row);
+
+        return panel;
+    }
+
+    private JPanel buildEndSessionSection() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));
+        panel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createEtchedBorder(), "Session",
+                TitledBorder.LEFT, TitledBorder.TOP));
+        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height + 40));
+
         JButton endSessionBtn = new JButton("End Session");
         endSessionBtn.setToolTipText("Append latest beat to canon (if needed) and save the canon file");
         endSessionBtn.setFont(endSessionBtn.getFont().deriveFont(Font.BOLD, 14f));
         endSessionBtn.addActionListener(e -> onEndSession.run());
 
-        JPanel topRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));
-        topRow.setOpaque(false);
-        topRow.add(redoBtn);
-        topRow.add(continueBtn);
-        topRow.add(endSceneBtn);
-        topRow.add(resetBtn);
-        topRow.add(fetchBtn);
-
-        JPanel bottomRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));
-        bottomRow.setOpaque(false);
-        bottomRow.add(endSessionBtn);
-
-        panel.add(topRow);
-        panel.add(bottomRow);
-
+        panel.add(endSessionBtn);
         return panel;
+    }
+
+    private void updateRedoLabel() {
+        redoBtn.setText("Redo " + redoCountStore.getCount());
     }
 
     public void triggerSendContext() {

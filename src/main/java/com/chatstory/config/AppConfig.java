@@ -25,6 +25,7 @@ public final class AppConfig {
     private final String finalControllerConfigPath;
     private final String rulesFileListPath;
     private final String pictureConfigPath;
+    private final String redoCountPath;
 
     public AppConfig() {
         String localAppData = System.getenv("LOCALAPPDATA");
@@ -52,6 +53,7 @@ public final class AppConfig {
         finalControllerConfigPath        = new File(appRoamDir, "final-controller.json").getAbsolutePath();
         rulesFileListPath                = new File(appRoamDir, "rules-files.json").getAbsolutePath();
         pictureConfigPath                = new File(appRoamDir, "picture-config.json").getAbsolutePath();
+        redoCountPath                    = new File(appRoamDir, "redo-count.json").getAbsolutePath();
 
         // Create application directories now so JCEF and config reads don't fail
         ensureDir(appLocalDir);
@@ -102,4 +104,5 @@ public final class AppConfig {
     public String getFinalControllerConfigPath()        { return finalControllerConfigPath; }
     public String getRulesFileListPath()                { return rulesFileListPath; }
     public String getPictureConfigPath()                { return pictureConfigPath; }
+    public String getRedoCountPath()                    { return redoCountPath; }
 }

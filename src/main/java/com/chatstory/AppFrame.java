@@ -16,6 +16,7 @@ import com.chatstory.controller.SessionControllerStore;
 import com.chatstory.mode.AppMode;
 import com.chatstory.mode.AppModeModel;
 import com.chatstory.rules.RulesFileStore;
+import com.chatstory.session.RedoCountStore;
 import com.chatstory.theme.NativeThemeApplier;
 import com.chatstory.theme.NativeThemeModel;
 import com.chatstory.ui.ConfigurationPanel;
@@ -52,6 +53,7 @@ public class AppFrame extends JFrame {
                     IntermediateControllerStore intermediateControllerStore,
                     FinalControllerStore finalControllerStore,
                     RulesFileStore rulesFileStore,
+                    RedoCountStore redoCountStore,
                     Map<Integer, Runnable> browserShortcuts) {
         super("Story Workstation");
 
@@ -102,6 +104,7 @@ public class AppFrame extends JFrame {
                 finalControllerStore,
                 rulesFileStore,
                 contextFileStore,
+                redoCountStore,
                 text -> chatBridge.sendPrompt(text, statusResponseListener("Controller sent")),
                 chatBridge::clickUploadFile,
                 onRedo, onContinue, onEndScene, onReset, onFetch,
