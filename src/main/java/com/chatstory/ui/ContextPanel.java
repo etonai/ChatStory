@@ -87,6 +87,7 @@ public class ContextPanel extends JPanel {
         // Collapse viewer until first use; must defer until component is realized
         SwingUtilities.invokeLater(() -> splitPane.setDividerLocation(1.0));
 
+        contextFileStore.addListener(() -> UiThread.run(this::refreshChecklist));
         for (Path entry : contextFileStore.getEntries()) {
             addCheckbox(entry);
         }
@@ -111,8 +112,18 @@ public class ContextPanel extends JPanel {
             Path path = file.toPath().toAbsolutePath();
             if (existing.contains(path)) continue;
             contextFileStore.add(path);
-            addCheckbox(path);
         }
+    }
+
+    private void refreshChecklist() {
+        checklistPanel.removeAll();
+        for (Path entry : contextFileStore.getEntries()) {
+            addCheckbox(entry);
+        }
+        updateStageButton();
+        updateSelectAllButton();
+        checklistPanel.revalidate();
+        checklistPanel.repaint();
     }
 
     private void addCheckbox(Path path) {
@@ -261,17 +272,12 @@ public class ContextPanel extends JPanel {
     }
 
     private void removeChecked() {
-        List<Component> toRemove = new ArrayList<>();
         for (Component c : checklistPanel.getComponents()) {
             if (c instanceof JCheckBox cb && cb.isSelected()) {
                 Path path = (Path) cb.getClientProperty("filePath");
                 contextFileStore.remove(path);
-                toRemove.add(cb);
             }
         }
-        toRemove.forEach(checklistPanel::remove);
-        checklistPanel.revalidate();
-        checklistPanel.repaint();
         updateStageButton();
         statusLabel.setText(" ");
     }

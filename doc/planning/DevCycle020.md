@@ -1,6 +1,6 @@
 # DevCycle 020: Load and Save Application State
 
-**Status:** Planning
+**Status:** Work Complete
 **Start Date:** 2026-06-11
 **Target Completion:** TBD
 **Focus:** Add user-driven Load/Save functionality backed by a JSON file and exposed through a dropdown menu in the upper-left corner of the application.
@@ -29,12 +29,12 @@ At the end of DevCycle 020:
 
 ### Phase 1: Define Save Data Scope and JSON Contract
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Identify which existing state should be included in the explicit save file.
-- [ ] Define a versioned JSON root object, e.g. `schemaVersion`, `savedAt`, and nested state sections.
-- [ ] Decide how file paths should be represented, using absolute paths for current local-machine compatibility.
-- [ ] Document which runtime-only state is intentionally excluded.
+- [x] Identify which existing state should be included in the explicit save file.
+- [x] Define a versioned JSON root object, e.g. `schemaVersion`, `savedAt`, and nested state sections.
+- [x] Decide how file paths should be represented, using absolute paths for current local-machine compatibility.
+- [x] Document which runtime-only state is intentionally excluded.
 
 **Technical Notes:**
 
@@ -60,13 +60,13 @@ The first format can be intentionally local-machine oriented. Cross-machine path
 
 ### Phase 2: Add an Application Snapshot Service
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Create a small model for the save file, e.g. `ApplicationSnapshot`.
-- [ ] Create a service responsible for collecting state from stores and applying loaded state back to stores.
-- [ ] Serialize and deserialize with Gson, matching the existing project JSON approach.
-- [ ] Ensure load validates the parsed root object before applying any changes.
-- [ ] Add focused unit tests for round-trip serialization, missing optional fields, malformed JSON, and version handling.
+- [x] Create a small model for the save file, e.g. `ApplicationSnapshot`.
+- [x] Create a service responsible for collecting state from stores and applying loaded state back to stores.
+- [x] Serialize and deserialize with Gson, matching the existing project JSON approach.
+- [x] Ensure load validates the parsed root object before applying any changes.
+- [x] Add focused unit tests for round-trip serialization, missing optional fields, malformed JSON, and version handling.
 
 **Technical Notes:**
 
@@ -82,13 +82,13 @@ Use a schema version such as `1`, and reject unsupported future major versions w
 
 ### Phase 3: Add Upper-Left Load/Save Dropdown
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Add a dropdown menu to the upper-left toolbar area in `AppFrame`.
-- [ ] Add `Load...` and `Save...` menu items.
-- [ ] Use `JFileChooser` for selecting the JSON file to load or save.
-- [ ] Default save files to a `.json` extension.
-- [ ] Keep the menu available without disrupting the existing DevTools/Test Inject toolbar controls.
+- [x] Add a dropdown menu to the upper-left toolbar area in `AppFrame`.
+- [x] Add `Load...` and `Save...` menu items.
+- [x] Use `JFileChooser` for selecting the JSON file to load or save.
+- [x] Default save files to a `.json` extension.
+- [x] Keep the menu available without disrupting the existing DevTools/Test Inject toolbar controls.
 
 **Technical Notes:**
 
@@ -98,14 +98,14 @@ Suggested menu label: `File` or `Session`. Since the feature is explicitly Load/
 
 ### Phase 4: Load/Save Behavior and Error Handling
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Save the current snapshot to the chosen JSON path.
-- [ ] Show a success status or dialog after a successful save.
-- [ ] Load a snapshot from the chosen JSON path.
-- [ ] Validate the snapshot before mutating app state.
-- [ ] Apply loaded state to stores and refresh dependent UI.
-- [ ] Show a clear error dialog for read/write failures, malformed JSON, unsupported schema versions, or invalid snapshot contents.
+- [x] Save the current snapshot to the chosen JSON path.
+- [x] Show a success status or dialog after a successful save.
+- [x] Load a snapshot from the chosen JSON path.
+- [x] Validate the snapshot before mutating app state.
+- [x] Apply loaded state to stores and refresh dependent UI.
+- [x] Show a clear error dialog for read/write failures, malformed JSON, unsupported schema versions, or invalid snapshot contents.
 
 **Technical Notes:**
 
@@ -113,9 +113,9 @@ To avoid partial restore problems, parse and validate the file first, then apply
 
 ### Phase 5: Verification
 
-**Status:** Planning
+**Status:** Work Complete
 
-- [ ] Run the relevant unit tests.
+- [x] Run the relevant unit tests.
 - [ ] Manually validate saving a populated app state to a JSON file.
 - [ ] Manually validate loading that JSON file after changing state.
 - [ ] Manually validate loading after application restart.
@@ -154,15 +154,23 @@ Manual checks should cover at least controller file paths, context/rules lists, 
 
 *Fill in when the cycle closes. Move this document to `doc/planning/completed/` afterward.*
 
-**Completion Date:** [YYYY-MM-DD]
-**Phases Completed:** [List or "All"]
-**Work Deferred:** [What was not done and why, or "None"]
+**Completion Date:** 2026-06-11
+**Phases Completed:** All implementation phases; manual UI verification remains pending user review.
+**Work Deferred:** Browser/ChatGPT conversation state and in-memory story content that is not already represented by an existing store remain deferred.
 
 **Accomplishments:**
-- [Pending]
+- Added a versioned `ApplicationSnapshot` JSON format and `ApplicationSnapshotService`.
+- Added upper-left `File` dropdown actions for `Load...` and `Save...`.
+- Added shared, persistent last-used snapshot directory tracking for both `Load...` and `Save...`.
+- Added restore APIs for context/rules stores and redo-count listener support.
+- Updated Context and Rules panels to refresh from store listener events so loaded snapshots repaint visible lists.
+- Added focused unit tests for snapshot round-trip, apply, malformed JSON, and unsupported schema validation.
 
 **Metrics:**
-- Files modified: [Pending]
+- Files modified: 14
+- Focused DC20 tests: passing with `./gradlew.bat test --tests com.chatstory.SnapshotFileStoreTest --tests com.chatstory.ApplicationSnapshotServiceTest`
+- Full suite: currently blocked by existing `CorrectionTypeTest.endScenePromptIsFormattedDirection` mismatch unrelated to DC20.
+- Manual UI verification: pending.
 
 **Lessons / Notes:**
-[Pending]
+Snapshot restore validates schema version, enum values, redo count, and path syntax before applying state, reducing the chance of partial UI/store mutation from an invalid file.

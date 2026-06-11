@@ -107,6 +107,7 @@ public class MainPanel extends JPanel {
         finalControllerStore.addListener(this::refreshFinalPath);
         rulesFileStore.addListener(this::refreshSendRulesButton);
         contextFileStore.addCheckedListener(this::refreshSendContextButton);
+        redoCountStore.addListener(this::updateRedoLabel);
     }
 
     private JPanel buildControllerSection() {

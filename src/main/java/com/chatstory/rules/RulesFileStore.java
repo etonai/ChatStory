@@ -42,6 +42,20 @@ public class RulesFileStore {
         return Collections.unmodifiableList(entries);
     }
 
+    public void replaceAll(List<Path> files, Path lastDirectory) {
+        entries.clear();
+        if (files != null) {
+            for (Path file : files) {
+                if (file == null) continue;
+                Path absolute = file.toAbsolutePath();
+                if (!entries.contains(absolute)) entries.add(absolute);
+            }
+        }
+        this.lastDirectory = lastDirectory;
+        save();
+        for (Runnable listener : listeners) listener.run();
+    }
+
     public Path getLastDirectory() {
         return lastDirectory;
     }

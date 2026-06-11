@@ -15,6 +15,7 @@ public class ContextFileStore {
     private Path lastDirectory;
     private final List<Path> entries = new ArrayList<>();
     private final Set<Path> checkedFiles = new LinkedHashSet<>();
+    private final List<Runnable> listeners = new ArrayList<>();
     private final List<Runnable> stagingPathListeners = new ArrayList<>();
     private final List<Runnable> checkedListeners = new ArrayList<>();
     private final Gson gson = new Gson();
@@ -59,13 +60,18 @@ public class ContextFileStore {
         if (entries.contains(absolute)) return;
         entries.add(absolute);
         save();
+        for (Runnable listener : listeners) listener.run();
     }
 
     public void remove(Path filePath) {
         Path absolute = filePath.toAbsolutePath();
         boolean removed = entries.remove(absolute);
         checkedFiles.remove(absolute);
-        if (removed) save();
+        if (removed) {
+            save();
+            for (Runnable listener : listeners) listener.run();
+            for (Runnable listener : checkedListeners) listener.run();
+        }
     }
 
     public boolean isChecked(Path filePath) {
@@ -97,6 +103,41 @@ public class ContextFileStore {
 
     public List<Path> getEntries() {
         return Collections.unmodifiableList(entries);
+    }
+
+    public void addListener(Runnable listener) {
+        listeners.add(listener);
+    }
+
+    public void replaceAll(List<Path> files, List<Path> checked, Path lastDirectory, Path stagingPath) {
+        entries.clear();
+        checkedFiles.clear();
+
+        if (files != null) {
+            for (Path file : files) {
+                if (file == null) continue;
+                Path absolute = file.toAbsolutePath();
+                if (!entries.contains(absolute)) entries.add(absolute);
+            }
+        }
+
+        if (checked != null) {
+            for (Path file : checked) {
+                if (file == null) continue;
+                Path absolute = file.toAbsolutePath();
+                if (entries.contains(absolute)) checkedFiles.add(absolute);
+            }
+        }
+
+        this.lastDirectory = lastDirectory;
+        this.currentStagingPath = stagingPath != null
+                ? stagingPath.toAbsolutePath()
+                : defaultStagingPath;
+
+        save();
+        for (Runnable listener : listeners) listener.run();
+        for (Runnable listener : checkedListeners) listener.run();
+        for (Runnable listener : stagingPathListeners) listener.run();
     }
 
     public Path getLastDirectory() {

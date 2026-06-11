@@ -16,7 +16,10 @@ import com.chatstory.controller.SessionControllerStore;
 import com.chatstory.mode.AppMode;
 import com.chatstory.mode.AppModeModel;
 import com.chatstory.rules.RulesFileStore;
+import com.chatstory.session.ApplicationSnapshotException;
+import com.chatstory.session.ApplicationSnapshotService;
 import com.chatstory.session.RedoCountStore;
+import com.chatstory.session.SnapshotFileStore;
 import com.chatstory.theme.NativeThemeApplier;
 import com.chatstory.theme.NativeThemeModel;
 import com.chatstory.ui.ConfigurationPanel;
@@ -30,10 +33,13 @@ import com.chatstory.ui.RulesPanel;
 import org.cef.browser.CefBrowser;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
+import java.io.File;
+import java.nio.file.Path;
 import java.util.Map;
 import java.awt.event.WindowEvent;
 
@@ -44,6 +50,8 @@ public class AppFrame extends JFrame {
     private final AppModeModel modeModel = new AppModeModel();
     private final NativeThemeModel themeModel = new NativeThemeModel();
     private final NativeThemeApplier themeApplier = new NativeThemeApplier();
+    private final ApplicationSnapshotService snapshotService;
+    private final SnapshotFileStore snapshotFileStore;
 
     public AppFrame(AppState appState, BrowserPanel browserPanel, CefBrowser browser,
                     ChatGptBridge chatBridge, CefClient client,
@@ -54,6 +62,7 @@ public class AppFrame extends JFrame {
                     FinalControllerStore finalControllerStore,
                     RulesFileStore rulesFileStore,
                     RedoCountStore redoCountStore,
+                    SnapshotFileStore snapshotFileStore,
                     Map<Integer, Runnable> browserShortcuts) {
         super("Story Workstation");
 
@@ -64,6 +73,18 @@ public class AppFrame extends JFrame {
         statusLabel = new JLabel(" Starting...");
         statusLabel.setForeground(Color.DARK_GRAY);
         CanonStore canonStore = new CanonStore();
+        this.snapshotFileStore = snapshotFileStore;
+        snapshotService = new ApplicationSnapshotService(
+                sessionControllerStore,
+                intermediateControllerStore,
+                finalControllerStore,
+                contextFileStore,
+                rulesFileStore,
+                canonFolderStore,
+                pictureFileStore,
+                redoCountStore,
+                modeModel,
+                themeModel);
         leftPane = new LeftPanePanel(canonStore,
                 prompt -> chatBridge.sendPrompt(prompt, statusResponseListener("Correction sent")),
                 () -> browser.setFocus(false),
@@ -129,6 +150,7 @@ public class AppFrame extends JFrame {
                 statusResponseListener("Test prompt injected")));
 
         JPanel leftTools = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        leftTools.add(buildFileMenuButton());
         leftTools.add(devToolsBtn);
         leftTools.add(testInjectBtn);
 
@@ -206,6 +228,108 @@ public class AppFrame extends JFrame {
             action.run();
             return true;
         });
+    }
+
+    private JButton buildFileMenuButton() {
+        JButton fileButton = new JButton("File v");
+        fileButton.setToolTipText("Load or save application state");
+
+        JPopupMenu menu = new JPopupMenu();
+        JMenuItem loadItem = new JMenuItem("Load...");
+        JMenuItem saveItem = new JMenuItem("Save...");
+
+        loadItem.addActionListener(e -> loadSnapshot());
+        saveItem.addActionListener(e -> saveSnapshot());
+
+        menu.add(loadItem);
+        menu.add(saveItem);
+
+        fileButton.addActionListener(e -> menu.show(fileButton, 0, fileButton.getHeight()));
+        return fileButton;
+    }
+
+    private void saveSnapshot() {
+        JFileChooser chooser = snapshotFileChooser("Save Application State");
+        File selectedSaveFile = defaultSnapshotFile();
+        if (selectedSaveFile.getParentFile() != null) {
+            chooser.setCurrentDirectory(selectedSaveFile.getParentFile());
+        }
+        chooser.setSelectedFile(selectedSaveFile);
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+
+        File selected = withJsonExtension(chooser.getSelectedFile());
+        rememberSnapshotDirectory(selected);
+        Path path = selected.toPath();
+        try {
+            snapshotService.save(path);
+            statusLabel.setText(" Application state saved");
+            JOptionPane.showMessageDialog(this,
+                    "Application state saved to:\n" + path,
+                    "Save Complete",
+                    JOptionPane.INFORMATION_MESSAGE);
+        } catch (ApplicationSnapshotException e) {
+            showSnapshotError("Save Failed", e);
+        }
+    }
+
+    private void loadSnapshot() {
+        JFileChooser chooser = snapshotFileChooser("Load Application State");
+        if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
+
+        File selected = chooser.getSelectedFile();
+        rememberSnapshotDirectory(selected);
+        Path path = selected.toPath();
+        try {
+            snapshotService.loadAndApply(path);
+            statusLabel.setText(" Application state loaded");
+            JOptionPane.showMessageDialog(this,
+                    "Application state loaded from:\n" + path,
+                    "Load Complete",
+                    JOptionPane.INFORMATION_MESSAGE);
+        } catch (ApplicationSnapshotException | IllegalArgumentException e) {
+            showSnapshotError("Load Failed", e);
+        }
+    }
+
+    private JFileChooser snapshotFileChooser(String title) {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle(title);
+        chooser.setFileFilter(new FileNameExtensionFilter("JSON files (*.json)", "json"));
+        Path lastDirectory = snapshotFileStore.getLastDirectory();
+        if (lastDirectory != null && lastDirectory.toFile().isDirectory()) {
+            chooser.setCurrentDirectory(lastDirectory.toFile());
+        }
+        return chooser;
+    }
+
+    private File defaultSnapshotFile() {
+        Path lastDirectory = snapshotFileStore.getLastDirectory();
+        if (lastDirectory != null && lastDirectory.toFile().isDirectory()) {
+            return lastDirectory.resolve("chatstory-state.json").toFile();
+        }
+        return new File("chatstory-state.json");
+    }
+
+    private File withJsonExtension(File selected) {
+        String name = selected.getName();
+        if (name.toLowerCase().endsWith(".json")) return selected;
+        File parent = selected.getParentFile();
+        return new File(parent == null ? new File(".") : parent, name + ".json");
+    }
+
+    private void rememberSnapshotDirectory(File selected) {
+        File directory = selected.isDirectory() ? selected : selected.getParentFile();
+        if (directory != null) {
+            snapshotFileStore.setLastDirectory(directory.toPath());
+        }
+    }
+
+    private void showSnapshotError(String title, Exception e) {
+        statusLabel.setText(" " + title);
+        JOptionPane.showMessageDialog(this,
+                e.getMessage(),
+                title,
+                JOptionPane.ERROR_MESSAGE);
     }
 
     private String labelFor(AppState.State state) {

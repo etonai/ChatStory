@@ -14,6 +14,7 @@ import com.chatstory.controller.IntermediateControllerStore;
 import com.chatstory.controller.SessionControllerStore;
 import com.chatstory.rules.RulesFileStore;
 import com.chatstory.session.RedoCountStore;
+import com.chatstory.session.SnapshotFileStore;
 import me.friwi.jcefmaven.CefAppBuilder;
 import me.friwi.jcefmaven.impl.progress.ConsoleProgressHandler;
 import org.cef.CefApp;
@@ -43,6 +44,7 @@ public class Main {
                 new FinalControllerStore(config.getFinalControllerConfigPath());
         RulesFileStore rulesFileStore = new RulesFileStore(config.getRulesFileListPath());
         RedoCountStore redoCountStore = new RedoCountStore(config.getRedoCountPath());
+        SnapshotFileStore snapshotFileStore = new SnapshotFileStore(config.getSnapshotFileConfigPath());
 
         System.out.println("Story Workstation starting...");
         System.out.println("  Profile : " + config.getProfilePath());
@@ -91,6 +93,6 @@ public class Main {
                 new AppFrame(appState, browserPanel, browser, chatBridge, client,
                         contextFileStore, canonFolderStore, pictureFileStore,
                         sessionControllerStore, intermediateControllerStore, finalControllerStore,
-                        rulesFileStore, redoCountStore, browserShortcuts));
+                        rulesFileStore, redoCountStore, snapshotFileStore, browserShortcuts));
     }
 }

@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 
 public class RulesPanel extends JPanel {
@@ -67,6 +66,7 @@ public class RulesPanel extends JPanel {
 
         SwingUtilities.invokeLater(() -> splitPane.setDividerLocation(1.0));
 
+        rulesFileStore.addListener(() -> SwingUtilities.invokeLater(this::refreshChecklist));
         for (Path entry : rulesFileStore.getEntries()) {
             addCheckbox(entry);
         }
@@ -91,8 +91,17 @@ public class RulesPanel extends JPanel {
             Path path = file.toPath().toAbsolutePath();
             if (existing.contains(path)) continue;
             rulesFileStore.add(path);
-            addCheckbox(path);
         }
+    }
+
+    private void refreshChecklist() {
+        checklistPanel.removeAll();
+        for (Path entry : rulesFileStore.getEntries()) {
+            addCheckbox(entry);
+        }
+        updateSelectAllButton();
+        checklistPanel.revalidate();
+        checklistPanel.repaint();
     }
 
     private void addCheckbox(Path path) {
@@ -235,17 +244,12 @@ public class RulesPanel extends JPanel {
     }
 
     private void removeChecked() {
-        List<Component> toRemove = new ArrayList<>();
         for (Component c : checklistPanel.getComponents()) {
             if (c instanceof JCheckBox cb && cb.isSelected()) {
                 Path path = (Path) cb.getClientProperty("filePath");
                 rulesFileStore.remove(path);
-                toRemove.add(cb);
             }
         }
-        toRemove.forEach(checklistPanel::remove);
-        checklistPanel.revalidate();
-        checklistPanel.repaint();
         updateSelectAllButton();
     }
 }
