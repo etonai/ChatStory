@@ -76,6 +76,7 @@
 
     window.chatStoryExtractResponse = function(options) {
         var requestId = options && options.requestId || 0;
+        console.log('[extract] start requestId=' + requestId);
         try {
             var selectors = options.selectors || {};
             var assistantBeforeCount = options.assistantBeforeCount || 0;
@@ -87,15 +88,29 @@
             var stableSince = 0;
             var lastText = '';
             var latestText = '';
+            var pollCount = 0;
+            var lastLogAt = 0;
 
             var timer = window.setInterval(function() {
                 try {
+                    pollCount++;
                     var assistants = allMatches(selectors.assistantMsg);
                     var target = assistants.length > assistantBeforeCount
                         ? assistants[assistantBeforeCount]
                         : null;
                     var generating = anyVisible(selectors.stopButton);
                     var sendReady = anyEnabled(selectors.sendButton);
+
+                    if (Date.now() - lastLogAt >= 3000) {
+                        lastLogAt = Date.now();
+                        console.log('[extract] polling requestId=' + requestId
+                            + ' poll#=' + pollCount
+                            + ' hasTarget=' + !!target
+                            + ' generating=' + generating
+                            + ' sendReady=' + sendReady
+                            + ' textLen=' + latestText.length
+                            + ' stableForMs=' + (stableSince ? (Date.now() - stableSince) : 0));
+                    }
 
                     if (target) {
                         latestText = textOf(target);
@@ -115,6 +130,10 @@
                                 && stableSince
                                 && stableForMs >= stabilityWindowMs) {
                             window.clearInterval(timer);
+                            console.log('[extract] complete requestId=' + requestId
+                                + ' poll#=' + pollCount
+                                + ' textLen=' + latestText.length
+                                + ' elapsedMs=' + (Date.now() - startedAt));
                             post({
                                 type: 'responseComplete',
                                 requestId: requestId,
@@ -129,6 +148,9 @@
 
                     if (Date.now() - startedAt >= timeoutMs) {
                         window.clearInterval(timer);
+                        console.warn('[extract] timeout requestId=' + requestId
+                            + ' poll#=' + pollCount
+                            + ' elapsedMs=' + (Date.now() - startedAt));
                         post({
                             type: 'responseComplete',
                             requestId: requestId,
@@ -140,6 +162,7 @@
                     }
                 } catch (e) {
                     window.clearInterval(timer);
+                    console.error('[extract] poll iteration threw requestId=' + requestId, e);
                     post({
                         type: 'responseComplete',
                         requestId: requestId,
@@ -150,6 +173,7 @@
                 }
             }, pollIntervalMs);
         } catch (e) {
+            console.error('[extract] setup threw requestId=' + requestId, e);
             post({
                 type: 'responseComplete',
                 requestId: requestId,

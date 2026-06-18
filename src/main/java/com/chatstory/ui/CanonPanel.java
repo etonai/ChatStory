@@ -84,12 +84,16 @@ public class CanonPanel extends JPanel {
     }
 
     public void appendEntry(String text) {
+        System.out.println("[CanonPanel] appendEntry enter thread=" + Thread.currentThread().getName()
+                + " onEdt=" + SwingUtilities.isEventDispatchThread()
+                + " textLen=" + (text == null ? 0 : text.length()));
         if (text == null || text.isBlank()) return;
         String current = textArea.getText();
         String updated = current.isBlank() ? text : current + "\n\n---\n\n" + text;
         textArea.setText(updated);
         textArea.setCaretPosition(0);
         autoSaveTemp(updated);
+        System.out.println("[CanonPanel] appendEntry exit");
     }
 
     private void autoSaveTemp(String content) {

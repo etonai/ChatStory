@@ -23,22 +23,27 @@ public class CurrentBeatModel {
     private boolean appendedToCanon = false;
 
     public synchronized UpdateResult update(int newBeatNumber, String responseText) {
+        System.out.println("[CurrentBeatModel] update enter newBeat=" + newBeatNumber
+                + " currentBeat=" + beatNumber);
+        UpdateResult result;
         if (beatNumber == null) {
             beatNumber = newBeatNumber;
             text = responseText;
             appendedToCanon = false;
-            return new UpdateResult(ResultKind.FIRST_BEAT, null);
-        }
-        if (newBeatNumber == beatNumber) {
+            result = new UpdateResult(ResultKind.FIRST_BEAT, null);
+        } else if (newBeatNumber == beatNumber) {
             text = responseText;
             appendedToCanon = false;
-            return new UpdateResult(ResultKind.REPLACED, null);
+            result = new UpdateResult(ResultKind.REPLACED, null);
+        } else {
+            String oldText = text;
+            beatNumber = newBeatNumber;
+            text = responseText;
+            appendedToCanon = false;
+            result = new UpdateResult(ResultKind.ROLLED_OVER, oldText);
         }
-        String oldText = text;
-        beatNumber = newBeatNumber;
-        text = responseText;
-        appendedToCanon = false;
-        return new UpdateResult(ResultKind.ROLLED_OVER, oldText);
+        System.out.println("[CurrentBeatModel] update exit kind=" + result.kind);
+        return result;
     }
 
     public synchronized void markAppended() {

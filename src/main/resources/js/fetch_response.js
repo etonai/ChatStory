@@ -30,10 +30,14 @@
 
     window.chatStoryFetchResponse = function(options) {
         var requestId = options && options.requestId || 0;
+        console.log('[manualFetch] start requestId=' + requestId);
         try {
             var assistants = document.querySelectorAll("[data-message-author-role='assistant']");
             var last = assistants.length > 0 ? assistants[assistants.length - 1] : null;
             var text = textOf(last);
+            console.log('[manualFetch] complete requestId=' + requestId
+                + ' found=' + !!last
+                + ' textLen=' + text.length);
             post({
                 type: 'manualFetch',
                 requestId: requestId,
@@ -43,6 +47,7 @@
                 message: text ? 'Response fetched' : 'No assistant response found in DOM'
             });
         } catch (e) {
+            console.error('[manualFetch] threw requestId=' + requestId, e);
             post({
                 type: 'manualFetch',
                 requestId: requestId,

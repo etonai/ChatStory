@@ -110,6 +110,7 @@ public class ChatGptBridge implements ChatBridge {
     }
 
     public void fetchLatestResponse(BiConsumer<String, String> onResult) {
+        log("fetchLatestResponse requested thread=" + Thread.currentThread().getName());
         manualFetchCallback = onResult;
         JsonObject options = new JsonObject();
         options.addProperty("requestId", 0L);
@@ -117,13 +118,20 @@ public class ChatGptBridge implements ChatBridge {
     }
 
     private void handleManualFetch(BridgeMessage message, org.cef.callback.CefQueryCallback callback) {
+        log("handleManualFetch enter requestId=" + message.getRequestId() + " ok=" + message.isOk());
         BiConsumer<String, String> cb = manualFetchCallback;
         manualFetchCallback = null;
         callback.success("");
         if (cb != null) {
             String text = message.isOk() && message.getText() != null ? message.getText() : "";
             String html = message.isOk() && message.getHtml() != null ? message.getHtml() : "";
+            log("handleManualFetch invoking callback requestId=" + message.getRequestId()
+                    + " thread=" + Thread.currentThread().getName()
+                    + " textLen=" + text.length());
             cb.accept(text, html);
+            log("handleManualFetch callback returned requestId=" + message.getRequestId());
+        } else {
+            log("handleManualFetch no callback registered requestId=" + message.getRequestId());
         }
     }
 
@@ -131,6 +139,7 @@ public class ChatGptBridge implements ChatBridge {
                              boolean trackResponse) {
         String text = prompt == null ? "" : prompt;
         long requestId = requestIds.next();
+        log("startPrompt requestId=" + requestId + " injectOnly=" + injectOnly + " trackResponse=" + trackResponse);
 
         synchronized (lock) {
             if (!appState.isSendEnabled() || activeRequestId != 0L) {
@@ -151,9 +160,9 @@ public class ChatGptBridge implements ChatBridge {
 
         try {
             if (appState.current() == AppState.State.Complete) {
-                appState.transition(AppState.State.Ready);
+                transition(AppState.State.Ready);
             }
-            appState.transition(AppState.State.InjectingPrompt);
+            transition(AppState.State.InjectingPrompt);
             JsonObject options = new JsonObject();
             options.addProperty("requestId", requestId);
             options.add("selectors", selectorSubset("promptEditor", "sendButton"));
@@ -165,6 +174,7 @@ public class ChatGptBridge implements ChatBridge {
     }
 
     private void handleInjectResult(BridgeMessage message, org.cef.callback.CefQueryCallback callback) {
+        log("handleInjectResult enter requestId=" + message.getRequestId() + " ok=" + message.isOk());
         if (!isActive(message)) {
             callback.success("");
             return;
@@ -182,7 +192,7 @@ public class ChatGptBridge implements ChatBridge {
                 listener = activeListener;
                 clearActiveLocked();
             }
-            appState.transition(AppState.State.Ready);
+            transition(AppState.State.Ready);
             if (listener != null) {
                 listener.onPromptSubmitted(message.getRequestId());
             }
@@ -191,7 +201,7 @@ public class ChatGptBridge implements ChatBridge {
         }
 
         try {
-            appState.transition(AppState.State.Sending);
+            transition(AppState.State.Sending);
             JsonObject options = new JsonObject();
             options.addProperty("requestId", message.getRequestId());
             options.add("selectors", selectorSubset("sendButton", "userMsg", "assistantMsg"));
@@ -205,6 +215,7 @@ public class ChatGptBridge implements ChatBridge {
     }
 
     private void handleSendResult(BridgeMessage message, org.cef.callback.CefQueryCallback callback) {
+        log("handleSendResult enter requestId=" + message.getRequestId() + " ok=" + message.isOk());
         if (!isActive(message)) {
             callback.success("");
             return;
@@ -228,12 +239,12 @@ public class ChatGptBridge implements ChatBridge {
             synchronized (lock) {
                 clearActiveLocked();
             }
-            appState.transition(AppState.State.Ready);
+            transition(AppState.State.Ready);
             callback.success("");
             return;
         }
         try {
-            appState.transition(AppState.State.WaitingForResponse);
+            transition(AppState.State.WaitingForResponse);
             JsonObject options = new JsonObject();
             options.addProperty("requestId", message.getRequestId());
             options.add("selectors", selectorSubset("assistantMsg", "stopButton", "sendButton"));
@@ -249,6 +260,9 @@ public class ChatGptBridge implements ChatBridge {
     }
 
     private void handleResponseComplete(BridgeMessage message, org.cef.callback.CefQueryCallback callback) {
+        log("handleResponseComplete enter requestId=" + message.getRequestId()
+                + " ok=" + message.isOk()
+                + " thread=" + Thread.currentThread().getName());
         if (!isActive(message)) {
             callback.success("");
             return;
@@ -272,14 +286,19 @@ public class ChatGptBridge implements ChatBridge {
         synchronized (lock) {
             clearActiveLocked();
         }
-        appState.transition(AppState.State.Complete);
+        transition(AppState.State.Complete);
         if (listener != null) {
+            log("handleResponseComplete invoking listener.onResponseComplete requestId=" + message.getRequestId()
+                    + " thread=" + Thread.currentThread().getName()
+                    + " textLen=" + (message.getText() == null ? 0 : message.getText().length()));
             listener.onResponseComplete(message.getRequestId(), message.getText(), message.getHtml());
+            log("handleResponseComplete listener.onResponseComplete returned requestId=" + message.getRequestId());
         }
         callback.success("");
     }
 
     private void handleErrorResult(BridgeMessage message, org.cef.callback.CefQueryCallback callback) {
+        log("handleErrorResult enter requestId=" + message.getRequestId());
         if (!isActive(message)) {
             callback.success("");
             return;
@@ -287,6 +306,16 @@ public class ChatGptBridge implements ChatBridge {
         failActive(message.getRequestId(), fallback(message.getErrorCode(), ErrorCodes.BRIDGE_HANDLER_FAILED),
                 fallback(message.getMessage(), "Bridge reported an error"));
         callback.success("");
+    }
+
+    private void transition(AppState.State next) {
+        log("appState.transition -> " + next);
+        appState.transition(next);
+        log("appState.transition -> " + next + " done");
+    }
+
+    private void log(String message) {
+        System.out.println("[ChatGptBridge] " + message);
     }
 
     private boolean isActive(BridgeMessage message) {
@@ -317,8 +346,9 @@ public class ChatGptBridge implements ChatBridge {
             clearActiveLocked();
         }
 
+        log("failActive requestId=" + requestId + " errorCode=" + errorCode + " message=" + message);
         try {
-            appState.transition(AppState.State.Error);
+            transition(AppState.State.Error);
         } catch (IllegalStateException ignored) {
             // If browser navigation changed state underneath us, still report the error.
         }
@@ -356,6 +386,7 @@ public class ChatGptBridge implements ChatBridge {
     }
 
     private void executeFunction(String resourcePath, String functionName, JsonObject options) {
+        log("executeFunction dispatching " + functionName + " (" + resourcePath + ")");
         String script = loadScript(resourcePath) + "\n" + functionName + "(" + GSON.toJson(options) + ");";
         domBridge.execute(browser, script);
     }

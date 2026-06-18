@@ -11,14 +11,22 @@ public class BeatParser {
     private BeatParser() {}
 
     public static OptionalInt parse(String responseText) {
-        if (responseText == null || responseText.isBlank()) return OptionalInt.empty();
+        System.out.println("[BeatParser] parse start textLen="
+                + (responseText == null ? 0 : responseText.length()));
+        if (responseText == null || responseText.isBlank()) {
+            System.out.println("[BeatParser] parse result=empty (blank input)");
+            return OptionalInt.empty();
+        }
         String[] lines = responseText.split("\n", 3);
         for (int i = 0; i < Math.min(2, lines.length); i++) {
             Matcher m = BEAT_PATTERN.matcher(lines[i]);
             if (m.find()) {
-                return OptionalInt.of(Integer.parseInt(m.group(1)));
+                int beat = Integer.parseInt(m.group(1));
+                System.out.println("[BeatParser] parse result=" + beat);
+                return OptionalInt.of(beat);
             }
         }
+        System.out.println("[BeatParser] parse result=empty (no match)");
         return OptionalInt.empty();
     }
 }

@@ -169,17 +169,28 @@ public class OutputPanel extends JPanel {
     }
 
     public void setResponse(String text, String html, int beatNumber) {
+        System.out.println("[OutputPanel] setResponse enter thread=" + Thread.currentThread().getName()
+                + " beatNumber=" + beatNumber + " textLen=" + (text == null ? 0 : text.length()));
         currentText = text == null ? "" : text;
-        if (!currentText.isBlank()) onBeatRecorded.accept(currentText);
+        if (!currentText.isBlank()) {
+            System.out.println("[OutputPanel] setResponse invoking onBeatRecorded thread="
+                    + Thread.currentThread().getName());
+            onBeatRecorded.accept(currentText);
+            System.out.println("[OutputPanel] setResponse onBeatRecorded returned");
+        }
         String display = (html != null && !html.isBlank()) ? html : "<pre>" + currentText + "</pre>";
         UiThread.run(() -> {
+            System.out.println("[OutputPanel] setResponse EDT update start thread="
+                    + Thread.currentThread().getName());
             if (beatNumber >= 0) responseLabel.setText("Current Beat " + beatNumber);
             editorPane.setText(wrapHtml(display));
             editorPane.setCaretPosition(0);
             boolean hasContent = !currentText.isBlank();
             addToCanonButton.setEnabled(hasContent);
             if (hasContent) addToCanonButton.setText("Add to Canon");
+            System.out.println("[OutputPanel] setResponse EDT update done");
         });
+        System.out.println("[OutputPanel] setResponse exit (EDT update may be queued)");
     }
 
     public void focusResponse() {

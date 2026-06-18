@@ -48,14 +48,26 @@ public class LeftPanePanel extends JPanel {
     }
 
     public void onResponseComplete(String text, String html) {
+        System.out.println("[LeftPanePanel] onResponseComplete enter thread="
+                + Thread.currentThread().getName()
+                + " textLen=" + (text == null ? 0 : text.length())
+                + " mode=" + modeModel.current());
         if (modeModel.current() != AppMode.STORY) return;
         OptionalInt parsed = BeatParser.parse(text);
-        if (!parsed.isPresent()) return;
+        if (!parsed.isPresent()) {
+            System.out.println("[LeftPanePanel] onResponseComplete no beat parsed");
+            return;
+        }
+        System.out.println("[LeftPanePanel] onResponseComplete parsed beat=" + parsed.getAsInt());
         CurrentBeatModel.UpdateResult result = currentBeatModel.update(parsed.getAsInt(), text);
+        System.out.println("[LeftPanePanel] onResponseComplete currentBeatModel result=" + result.kind);
         if (result.kind == CurrentBeatModel.ResultKind.ROLLED_OVER) {
+            System.out.println("[LeftPanePanel] onResponseComplete appending rolled-over beat to canon");
             canonPanel.appendEntry(result.textToAppend);
+            System.out.println("[LeftPanePanel] onResponseComplete canon append done");
         }
         outputPanel.setResponse(text, html, parsed.getAsInt());
+        System.out.println("[LeftPanePanel] onResponseComplete exit");
     }
 
     public void onResponseComplete(String text) {
