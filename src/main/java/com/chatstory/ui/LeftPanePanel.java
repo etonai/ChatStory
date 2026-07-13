@@ -1,5 +1,6 @@
 package com.chatstory.ui;
 
+import com.chatstory.UiThread;
 import com.chatstory.beat.BeatParser;
 import com.chatstory.beat.CurrentBeatModel;
 import com.chatstory.canon.CanonFolderStore;
@@ -50,12 +51,23 @@ public class LeftPanePanel extends JPanel {
     public void onResponseComplete(String text, String html) {
         System.out.println("[LeftPanePanel] onResponseComplete enter thread="
                 + Thread.currentThread().getName()
+                + " onEdt=" + SwingUtilities.isEventDispatchThread()
                 + " textLen=" + (text == null ? 0 : text.length())
                 + " mode=" + modeModel.current());
-        if (modeModel.current() != AppMode.STORY) return;
+        if (!SwingUtilities.isEventDispatchThread()) {
+            System.out.println("[LeftPanePanel] onResponseComplete queueing on EDT");
+            UiThread.run(() -> onResponseComplete(text, html));
+            System.out.println("[LeftPanePanel] onResponseComplete queued on EDT");
+            return;
+        }
+        if (modeModel.current() != AppMode.STORY) {
+            System.out.println("[LeftPanePanel] onResponseComplete exit non-story mode");
+            return;
+        }
         OptionalInt parsed = BeatParser.parse(text);
         if (!parsed.isPresent()) {
             System.out.println("[LeftPanePanel] onResponseComplete no beat parsed");
+            System.out.println("[LeftPanePanel] onResponseComplete exit");
             return;
         }
         System.out.println("[LeftPanePanel] onResponseComplete parsed beat=" + parsed.getAsInt());

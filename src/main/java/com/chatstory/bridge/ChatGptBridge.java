@@ -264,7 +264,9 @@ public class ChatGptBridge implements ChatBridge {
                 + " ok=" + message.isOk()
                 + " thread=" + Thread.currentThread().getName());
         if (!isActive(message)) {
+            log("handleResponseComplete callback.success before stale requestId=" + message.getRequestId());
             callback.success("");
+            log("handleResponseComplete callback.success after stale requestId=" + message.getRequestId());
             return;
         }
 
@@ -279,7 +281,9 @@ public class ChatGptBridge implements ChatBridge {
             }
             failActive(message.getRequestId(), fallback(message.getErrorCode(), ErrorCodes.EXTRACTION_FAILED),
                     fallback(message.getMessage(), "Response extraction failed"));
+            log("handleResponseComplete callback.success before failure requestId=" + message.getRequestId());
             callback.success("");
+            log("handleResponseComplete callback.success after failure requestId=" + message.getRequestId());
             return;
         }
 
@@ -294,7 +298,9 @@ public class ChatGptBridge implements ChatBridge {
             listener.onResponseComplete(message.getRequestId(), message.getText(), message.getHtml());
             log("handleResponseComplete listener.onResponseComplete returned requestId=" + message.getRequestId());
         }
+        log("handleResponseComplete callback.success before requestId=" + message.getRequestId());
         callback.success("");
+        log("handleResponseComplete callback.success after requestId=" + message.getRequestId());
     }
 
     private void handleErrorResult(BridgeMessage message, org.cef.callback.CefQueryCallback callback) {

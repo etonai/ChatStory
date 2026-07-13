@@ -1,5 +1,6 @@
 package com.chatstory.ui;
 
+import com.chatstory.UiThread;
 import com.chatstory.beat.CurrentBeatModel;
 import com.chatstory.canon.CanonFolderStore;
 import com.chatstory.canon.CanonStore;
@@ -13,10 +14,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class CanonPanel extends JPanel {
 
@@ -48,9 +48,13 @@ public class CanonPanel extends JPanel {
             @Override public void removeUpdate(DocumentEvent e)  { updateButtons(); }
             @Override public void changedUpdate(DocumentEvent e) { updateButtons(); }
             private void updateButtons() {
+                System.out.println("[CanonPanel] updateButtons enter thread="
+                        + Thread.currentThread().getName()
+                        + " onEdt=" + SwingUtilities.isEventDispatchThread());
                 boolean hasContent = !textArea.getText().isBlank();
                 saveButton.setEnabled(hasContent);
                 clearButton.setEnabled(hasContent);
+                System.out.println("[CanonPanel] updateButtons exit hasContent=" + hasContent);
             }
         });
 
@@ -87,12 +91,32 @@ public class CanonPanel extends JPanel {
         System.out.println("[CanonPanel] appendEntry enter thread=" + Thread.currentThread().getName()
                 + " onEdt=" + SwingUtilities.isEventDispatchThread()
                 + " textLen=" + (text == null ? 0 : text.length()));
-        if (text == null || text.isBlank()) return;
+        if (!SwingUtilities.isEventDispatchThread()) {
+            System.out.println("[CanonPanel] appendEntry queueing on EDT");
+            UiThread.run(() -> appendEntry(text));
+            System.out.println("[CanonPanel] appendEntry queued on EDT");
+            return;
+        }
+        System.out.println("[CanonPanel] appendEntry checking blank input");
+        if (text == null || text.isBlank()) {
+            System.out.println("[CanonPanel] appendEntry exit blank input");
+            return;
+        }
+        System.out.println("[CanonPanel] appendEntry before getText");
         String current = textArea.getText();
+        System.out.println("[CanonPanel] appendEntry after getText currentLen=" + current.length());
+        System.out.println("[CanonPanel] appendEntry before build updated");
         String updated = current.isBlank() ? text : current + "\n\n---\n\n" + text;
+        System.out.println("[CanonPanel] appendEntry after build updatedLen=" + updated.length());
+        System.out.println("[CanonPanel] appendEntry before setText");
         textArea.setText(updated);
+        System.out.println("[CanonPanel] appendEntry after setText");
+        System.out.println("[CanonPanel] appendEntry before setCaretPosition");
         textArea.setCaretPosition(0);
+        System.out.println("[CanonPanel] appendEntry after setCaretPosition");
+        System.out.println("[CanonPanel] appendEntry before autoSaveTemp");
         autoSaveTemp(updated);
+        System.out.println("[CanonPanel] appendEntry after autoSaveTemp");
         System.out.println("[CanonPanel] appendEntry exit");
     }
 
