@@ -186,6 +186,7 @@ public class InputPanel extends JPanel {
                 listener.onError(requestId, errorCode, message);
             }
         };
+        sender.reset();
         if (storyMode) {
             sender.sendPrompt(prompt, wrappedListener);
         } else {

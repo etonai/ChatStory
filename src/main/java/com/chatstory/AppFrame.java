@@ -92,13 +92,19 @@ public class AppFrame extends JFrame {
                 modeModel);
         client.addContextMenuHandler(new BrowserContextMenuHandler(leftPane::onResponseComplete));
 
-        Runnable onRedo = () -> chatBridge.sendPrompt(
-                CorrectionType.REDO_PROMPT,
-                statusResponseListener("Redo sent"));
+        Runnable onRedo = () -> {
+            chatBridge.reset();
+            chatBridge.sendPrompt(
+                    CorrectionType.REDO_PROMPT,
+                    statusResponseListener("Redo sent"));
+        };
 
-        Runnable onContinue = () -> chatBridge.sendPrompt(
-                CorrectionType.CONTINUE_PROMPT,
-                statusResponseListener("Continue sent"));
+        Runnable onContinue = () -> {
+            chatBridge.reset();
+            chatBridge.sendPrompt(
+                    CorrectionType.CONTINUE_PROMPT,
+                    statusResponseListener("Continue sent"));
+        };
 
         Runnable onEndScene = () -> chatBridge.sendPrompt(
                 CorrectionType.END_SCENE_PROMPT,
@@ -126,7 +132,10 @@ public class AppFrame extends JFrame {
                 rulesFileStore,
                 contextFileStore,
                 redoCountStore,
-                text -> chatBridge.sendPrompt(text, statusResponseListener("Controller sent")),
+                text -> {
+                    chatBridge.reset();
+                    chatBridge.sendPrompt(text, statusResponseListener("Controller sent"));
+                },
                 chatBridge::clickUploadFile,
                 onRedo, onContinue, onEndScene, onReset, onFetch,
                 leftPane::endSession);

@@ -409,6 +409,7 @@ public class MainPanel extends JPanel {
         List<Path> files = rulesFileStore.getEntries();
         if (files.isEmpty()) return;
 
+        onReset.run();
         contextFileStore.clearStaging();
 
         ContextFileStore.StagingResult result = contextFileStore.stageSelected(files);
@@ -499,6 +500,7 @@ public class MainPanel extends JPanel {
         List<Path> files = contextFileStore.getCheckedEntries();
         if (files.isEmpty()) return;
 
+        onReset.run();
         contextFileStore.clearStaging();
 
         ContextFileStore.StagingResult result = contextFileStore.stageSelected(files);
